@@ -131,10 +131,12 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div style={{
+      <div className="dashboard-main-container" style={{
+        width: '100%',
+        maxWidth: '100%',
         background: 'white',
         borderRadius: '8px',
-        padding: '24px',
+        padding: '40px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
         <h1 style={{ 
@@ -545,6 +547,21 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @media (min-width: 1200px) {
+            .dashboard-main-container {
+              max-width: 1400px;
+              margin: 0 auto;
+            }
+          }
+          @media (max-width: 768px) {
+            .dashboard-main-container {
+              padding: 20px !important;
+            }
+          }
+        `
+      }} />
     </Layout>
   )
 }

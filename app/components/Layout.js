@@ -253,7 +253,8 @@ export default function Layout({ children }) {
 
       {/* Main Content */}
       <main style={{
-        maxWidth: '1400px',
+        width: '100%',
+        maxWidth: '100%',
         margin: '0 auto',
         padding: '0 24px 24px',
         minHeight: 'calc(100vh - 300px)'
