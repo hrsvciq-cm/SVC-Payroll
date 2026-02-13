@@ -61,75 +61,77 @@ async function importData(filePath) {
     // استيراد الحضور
     if (data.attendance && data.attendance.length > 0) {
       console.log(`📅 استيراد ${data.attendance.length} سجل حضور...`)
+      let importedCount = 0
+      let skippedCount = 0
+      
       for (const att of data.attendance) {
         try {
-          // البحث عن الموظف
-          const employee = await prisma.employee.findUnique({
-            where: { employeeNumber: String(att.employeeId) }
-          })
+          let employee = null
           
-          if (!employee) {
-            // محاولة البحث بـ ID
-            const empById = await prisma.employee.findUnique({
-              where: { id: parseInt(att.employeeId) }
+          // محاولة البحث عن الموظف بطرق مختلفة
+          if (att.employeeId) {
+            // محاولة 1: البحث بـ employeeNumber (إذا كان employeeId هو رقم الموظف)
+            employee = await prisma.employee.findUnique({
+              where: { employeeNumber: String(att.employeeId) }
             })
             
-            if (!empById) {
-              console.warn(`⚠️  موظف غير موجود: ${att.employeeId}`)
-              continue
+            // محاولة 2: البحث بـ ID (إذا كان employeeId هو ID قاعدة البيانات)
+            if (!employee && !isNaN(parseInt(att.employeeId))) {
+              employee = await prisma.employee.findUnique({
+                where: { id: parseInt(att.employeeId) }
+              })
             }
-            
-            await prisma.attendance.upsert({
-              where: {
-                employeeId_date: {
-                  employeeId: empById.id,
-                  date: att.date
-                }
-              },
-              update: {
-                status: att.status || 'present',
-                overtimeHours: parseFloat(att.overtimeHours) || 0,
-                timeDelayMinutes: parseInt(att.timeDelayMinutes) || 0,
-                nonTimeDelayMinutes: parseInt(att.nonTimeDelayMinutes) || 0
-              },
-              create: {
-                employeeId: empById.id,
-                date: att.date,
-                status: att.status || 'present',
-                overtimeHours: parseFloat(att.overtimeHours) || 0,
-                timeDelayMinutes: parseInt(att.timeDelayMinutes) || 0,
-                nonTimeDelayMinutes: parseInt(att.nonTimeDelayMinutes) || 0
-              }
-            })
-          } else {
-            await prisma.attendance.upsert({
-              where: {
-                employeeId_date: {
-                  employeeId: employee.id,
-                  date: att.date
-                }
-              },
-              update: {
-                status: att.status || 'present',
-                overtimeHours: parseFloat(att.overtimeHours) || 0,
-                timeDelayMinutes: parseInt(att.timeDelayMinutes) || 0,
-                nonTimeDelayMinutes: parseInt(att.nonTimeDelayMinutes) || 0
-              },
-              create: {
-                employeeId: employee.id,
-                date: att.date,
-                status: att.status || 'present',
-                overtimeHours: parseFloat(att.overtimeHours) || 0,
-                timeDelayMinutes: parseInt(att.timeDelayMinutes) || 0,
-                nonTimeDelayMinutes: parseInt(att.nonTimeDelayMinutes) || 0
-              }
+          }
+          
+          // محاولة 3: البحث بـ employeeNumber من البيانات
+          if (!employee && att.employeeNumber) {
+            employee = await prisma.employee.findUnique({
+              where: { employeeNumber: String(att.employeeNumber) }
             })
           }
+          
+          if (!employee) {
+            skippedCount++
+            console.warn(`⚠️  موظف غير موجود: ${att.employeeId || att.employeeNumber || 'unknown'}`)
+            continue
+          }
+          
+          await prisma.attendance.upsert({
+            where: {
+              employeeId_date: {
+                employeeId: employee.id,
+                date: att.date
+              }
+            },
+            update: {
+              status: att.status || 'present',
+              absentType: att.absentType || null,
+              overtimeHours: parseFloat(att.overtimeHours) || 0,
+              timeDelayMinutes: parseInt(att.timeDelayMinutes) || 0,
+              nonTimeDelayMinutes: parseInt(att.nonTimeDelayMinutes) || 0
+            },
+            create: {
+              employeeId: employee.id,
+              date: att.date,
+              status: att.status || 'present',
+              absentType: att.absentType || null,
+              overtimeHours: parseFloat(att.overtimeHours) || 0,
+              timeDelayMinutes: parseInt(att.timeDelayMinutes) || 0,
+              nonTimeDelayMinutes: parseInt(att.nonTimeDelayMinutes) || 0
+            }
+          })
+          importedCount++
         } catch (error) {
-          console.error(`❌ خطأ في استيراد حضور ${att.id}:`, error.message)
+          console.error(`❌ خطأ في استيراد حضور ${att.id || att.date}:`, error.message)
+          skippedCount++
         }
       }
-      console.log('✅ تم استيراد الحضور\n')
+      console.log(`✅ تم استيراد ${importedCount} سجل حضور`)
+      if (skippedCount > 0) {
+        console.log(`⚠️  تم تخطي ${skippedCount} سجل (موظف غير موجود)\n`)
+      } else {
+        console.log('')
+      }
     }
 
     // استيراد الرواتب
@@ -279,4 +281,5 @@ if (!fs.existsSync(filePath)) {
 }
 
 importData(filePath)
+
 
