@@ -178,18 +178,13 @@ export async function middleware(request) {
     }
     
     // After clearing cookies, check if there's still a valid session
-    // If session exists (shouldn't happen after clearing cookies), redirect to dashboard
-    // Otherwise, allow access to login page
-    const { data: { session } } = await supabase.auth.getSession()
+    // Use getUser() instead of getSession() for security (as recommended by Supabase)
+    // getUser() authenticates the data by contacting the Supabase Auth server
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    if (session?.user) {
-      const now = Math.floor(Date.now() / 1000)
-      const expiresAt = session.expires_at
-      
-      // Only redirect if session is still valid (shouldn't happen after clearing cookies)
-      if (!expiresAt || expiresAt > now) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-      }
+    if (user && !userError) {
+      // User is authenticated - redirect to dashboard
+      return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     
     // Allow access to login page (cookies have been cleared)
@@ -197,12 +192,13 @@ export async function middleware(request) {
   }
 
   // For protected routes, validate authentication
-  // CRITICAL: Check session FIRST, then validate
-  // If session exists but came from a persistent cookie (after browser closure), reject it
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+  // CRITICAL: Use getUser() instead of getSession() for security
+  // getUser() authenticates the data by contacting the Supabase Auth server
+  // getSession() reads directly from cookies and may not be authentic
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-  // If no session or session error, clear cookies and redirect to login
-  if (!session || !session.user || sessionError) {
+  // If no user or user error, clear cookies and redirect to login
+  if (!user || userError) {
     // Clear all Supabase cookies to prevent session restoration
     supabaseCookies.forEach(cookie => {
       response.cookies.set(cookie.name, '', {
@@ -234,9 +230,9 @@ export async function middleware(request) {
   }
 
   // CRITICAL SECURITY CHECK: Verify session tracker exists
-  // If session exists but no session tracker, cookies survived browser closure (persistent)
+  // If user exists but no session tracker, cookies survived browser closure (persistent)
   // Clear everything and force re-login
-  if (session && session.user && !sessionTrackerCookie) {
+  if (user && !sessionTrackerCookie) {
     // Session exists but no tracker - cookies survived browser closure
     // This means they were persistent cookies, not session cookies
     // Clear all cookies and force re-login
@@ -265,33 +261,10 @@ export async function middleware(request) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Validate session expiration - CRITICAL security check
-  const now = Math.floor(Date.now() / 1000)
-  const expiresAt = session.expires_at
-  
-  // If session is expired, sign out and redirect to login
-  if (expiresAt && expiresAt < now) {
-    // Clear session tracker cookie
-    if (sessionTrackerCookie) {
-      response.cookies.set('sb-session-tracker', '', {
-        expires: new Date(0),
-        path: '/',
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-      })
-    }
-    
-    await supabase.auth.signOut()
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('expired', 'true')
-    return NextResponse.redirect(loginUrl)
-  }
-
-  // Additional validation: Check if session is valid
-  // This ensures session hasn't been revoked or invalidated
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (!user || userError || user.id !== session.user.id) {
+  // Additional validation: Check if user is still valid
+  // getUser() already validates the session, so we just need to check the user
+  // No need to check session expiration separately - getUser() handles that
+  if (!user || userError) {
     // Clear session tracker cookie
     if (sessionTrackerCookie) {
       response.cookies.set('sb-session-tracker', '', {

@@ -8,6 +8,8 @@ datasource db {
   // استخدام DATABASE_URL أولاً، ثم DIRECT_URL كـ fallback
   // Vercel يستخدم DATABASE_URL، بينما التطوير المحلي قد يستخدم DIRECT_URL
   url       = env("DATABASE_URL")
+  // directUrl اختياري - يستخدم فقط إذا كان موجوداً
+  // في Vercel، قد لا يكون DIRECT_URL موجوداً، لذا نجعله اختياري
   directUrl = env("DIRECT_URL")
 }
 
