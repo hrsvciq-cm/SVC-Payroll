@@ -5,9 +5,9 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  // استخدام DIRECT_URL مباشرة للمigrations والاتصال
-  // يمكنك تغييره إلى env("DATABASE_URL") بعد التأكد من أن DATABASE_URL يعمل
-  url       = env("DIRECT_URL")
+  // استخدام DATABASE_URL أولاً، ثم DIRECT_URL كـ fallback
+  // Vercel يستخدم DATABASE_URL، بينما التطوير المحلي قد يستخدم DIRECT_URL
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
