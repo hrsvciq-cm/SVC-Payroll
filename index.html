@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة الدوام والرواتب</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+            </div>
+            <h2 class="loading-title">نظام إدارة الدوام والرواتب</h2>
+            <p class="loading-subtitle">القرية الصغيرة للتجارة العامة</p>
+            <div class="loading-progress">
+                <div class="loading-progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-info">
+                <h1>نظام إدارة الدوام والرواتب</h1>
+                <p class="company-name">القرية الصغيرة للتجارة العامة</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="backupBtn">نسخ احتياطي</button>
+                <button class="btn btn-secondary" id="restoreBtn">استعادة</button>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="dashboard">لوحة التحكم</button>
+            <button class="tab-btn" data-tab="employees">الموظفين</button>
+            <button class="tab-btn" data-tab="attendance">تسجيل الدوام</button>
+            <button class="tab-btn" data-tab="payroll">الرواتب</button>
+            <button class="tab-btn" data-tab="reports">التقارير</button>
+        </nav>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content active">
+            <div class="section-header">
+                <h2>لوحة التحكم - دوام الموظفين</h2>
+            </div>
+
+            <!-- Dashboard Controls -->
+            <div class="dashboard-controls">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>عرض حسب:</label>
+                        <select id="dashboardViewType">
+                            <option value="month">الشهر الحالي</option>
+                            <option value="range">فترة محددة (من يوم إلى يوم)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="dashboardMonthGroup">
+                        <label>الشهر:</label>
+                        <input type="month" id="dashboardMonth" required>
+                    </div>
+                    <div class="form-group" id="dashboardRangeGroup" style="display: none;">
+                        <label>من تاريخ:</label>
+                        <input type="date" id="dashboardStartDate">
+                    </div>
+                    <div class="form-group" id="dashboardRangeGroup2" style="display: none;">
+                        <label>إلى تاريخ:</label>
+                        <input type="date" id="dashboardEndDate">
+                    </div>
+                    <div class="form-group">
+                        <label>الموظف (اختياري):</label>
+                        <select id="dashboardEmployee">
+                            <option value="">جميع الموظفين</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="loadDashboardBtn">عرض البيانات</button>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="stats-grid" id="dashboardStats">
+                <!-- Stats will be generated here -->
+            </div>
+
+            <!-- Attendance Table -->
+            <div class="dashboard-table-section">
+                <h3>تفاصيل الدوام</h3>
+                <div class="table-container">
+                    <table id="dashboardTable">
+                        <thead>
+                            <tr>
+                                <th>التاريخ</th>
+                                <th>الرقم الوظيفي</th>
+                                <th>الاسم</th>
+                                <th>الفرع</th>
+                                <th>القسم</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboardTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employees Tab -->
+        <div id="employees-tab" class="tab-content">
+            <div class="section-header">
+                <h2>إدارة الموظفين</h2>
+                <button class="btn btn-primary" id="addEmployeeBtn">إضافة موظف جديد</button>
+            </div>
+            <div class="search-box">
+                <input type="text" id="employeeSearch" placeholder="بحث عن موظف...">
+            </div>
+            <div class="table-container">
+                <table id="employeesTable">
+                    <thead>
+                        <tr>
+                            <th>الرقم الوظيفي</th>
+                            <th>الاسم</th>
+                            <th>الفرع</th>
+                            <th>القسم</th>
+                            <th>المسمى الوظيفي</th>
+                            <th>الراتب الأساسي</th>
+                            <th>الحالة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employeesTableBody">
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Terminated Employees Section -->
+            <div id="terminatedEmployeesSection" style="margin-top: 40px; display: none;">
+                <div class="section-header">
+                    <h2>الموظفون المنتهية خدماتهم</h2>
+                </div>
+                <div class="table-container">
+                    <table id="terminatedEmployeesTable">
+                        <thead>
+                            <tr>
+                                <th>الرقم الوظيفي</th>
+                                <th>الاسم</th>
+                                <th>الفرع</th>
+                                <th>القسم</th>
+                                <th>المسمى الوظيفي</th>
+                                <th>تاريخ إنهاء الخدمة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="terminatedEmployeesTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Tab -->
+        <div id="attendance-tab" class="tab-content">
+            <div class="section-header">
+                <h2>تسجيل الدوام</h2>
+            </div>
+            
+            <!-- Attendance Date Selector -->
+            <div class="date-selector">
+                <label>تاريخ الدوام:</label>
+                <input type="date" id="attendanceDate" required>
+            </div>
+
+            <!-- Individual Attendance -->
+            <div class="attendance-section">
+                <h3>تسجيل فردي</h3>
+                <div class="form-group">
+                    <label>اختر الموظف:</label>
+                    <select id="employeeSelect">
+                        <option value="">-- اختر موظف --</option>
+                    </select>
+                    <button class="btn btn-primary" id="markPresentBtn">مداوم اليوم</button>
+                </div>
+            </div>
+
+            <!-- Bulk Attendance -->
+            <div class="attendance-section">
+                <h3>تسجيل جماعي</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>حسب القسم:</label>
+                        <select id="departmentSelect">
+                            <option value="">-- اختر قسم --</option>
+                        </select>
+                        <button class="btn btn-primary" id="markByDeptBtn">تسجيل القسم</button>
+                    </div>
+                    <div class="form-group">
+                        <label>حسب الشفت:</label>
+                        <input type="text" id="shiftInput" placeholder="اسم الشفت">
+                        <button class="btn btn-primary" id="markByShiftBtn">تسجيل الشفت</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>اختر موظفين محددين:</label>
+                    <div class="custom-multi-select-wrapper">
+                        <div class="custom-multi-select" id="customEmployeeSelect">
+                            <div class="custom-multi-select-display" id="employeeSelectDisplay">
+                                <span class="placeholder">انقر لاختيار الموظفين...</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <div class="custom-multi-select-dropdown" id="employeeSelectDropdown">
+                                <div class="custom-multi-select-search">
+                                    <input type="text" id="employeeSearchInput" placeholder="ابحث عن موظف...">
+                                </div>
+                                <div class="custom-multi-select-options" id="employeeSelectOptions">
+                                    <!-- Options will be populated dynamically -->
+                                </div>
+                                <div class="custom-multi-select-actions">
+                                    <button type="button" class="btn btn-sm btn-primary" id="selectAllEmployees">تحديد الكل</button>
+                                    <button type="button" class="btn btn-sm btn-secondary" id="deselectAllEmployees">إلغاء التحديد</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="selected-employees-tags" id="selectedEmployeesTags"></div>
+                    </div>
+                    <button class="btn btn-primary" id="markSelectedBtn" style="margin-top: 10px;">تسجيل المحددين</button>
+                </div>
+            </div>
+
+            <!-- Multiple Days Attendance -->
+            <div class="attendance-section">
+                <h3>تسجيل عدة أيام دفعة واحدة</h3>
+                <div class="form-group">
+                    <label>اختر الموظف:</label>
+                    <select id="multiDayEmployeeSelect">
+                        <option value="">-- اختر موظف --</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>من تاريخ:</label>
+                        <input type="date" id="multiDayStartDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>إلى تاريخ:</label>
+                        <input type="date" id="multiDayEndDate" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>الحالة:</label>
+                    <select id="multiDayStatus">
+                        <option value="present">حاضر</option>
+                        <option value="absent">غياب</option>
+                        <option value="leave">إجازة</option>
+                        <option value="holiday">عطلة رسمية</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="excludeWeekends"> استثناء عطلة نهاية الأسبوع (الجمعة والسبت)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-primary" id="markMultipleDaysBtn">تسجيل الأيام المحددة</button>
+                </div>
+                <div id="multiDayPreview" style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 5px; display: none;">
+                    <strong>معاينة:</strong> سيتم تسجيل <span id="previewDaysCount">0</span> يوم
+                </div>
+            </div>
+
+            <!-- Today's Attendance List -->
+            <div class="attendance-section">
+                <h3>دوام اليوم</h3>
+                <div class="table-container">
+                    <table id="todayAttendanceTable">
+                        <thead>
+                            <tr>
+                                <th>الرقم الوظيفي</th>
+                                <th>الاسم</th>
+                                <th>الفرع</th>
+                                <th>القسم</th>
+                                <th>الحالة</th>
+                                <th>ساعات إضافية</th>
+                                <th>تأخير زمني (دقائق)</th>
+                                <th>تأخير غير زمني (دقائق)</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="todayAttendanceBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payroll Tab -->
+        <div id="payroll-tab" class="tab-content">
+            <div class="section-header">
+                <h2>الرواتب</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>اختر الشهر:</label>
+                        <input type="month" id="payrollMonth" required>
+                    </div>
+                    <button class="btn btn-primary" id="calculatePayrollBtn">حساب الرواتب</button>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="payrollTable">
+                    <thead>
+                        <tr>
+                            <th>الرقم الوظيفي</th>
+                            <th>الاسم</th>
+                            <th>أيام الحضور</th>
+                            <th>الراتب الأساسي</th>
+                            <th>الراتب المستحق</th>
+                            <th>الخصومات</th>
+                            <th>المكافآت</th>
+                            <th>السلف</th>
+                            <th>صافي الراتب</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payrollTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reports-tab" class="tab-content">
+            <div class="section-header">
+                <h2>التقارير</h2>
+            </div>
+            <div class="reports-controls">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نوع التقرير:</label>
+                        <select id="reportType">
+                            <option value="employees">تقرير الموظفين</option>
+                            <option value="activeEmployeesMonthly">تقرير الموظفين النشطين شهرياً</option>
+                            <option value="attendance">تقرير حضور</option>
+                            <option value="payroll">تقرير رواتب</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="reportMonthGroup">
+                        <label>الشهر:</label>
+                        <input type="month" id="reportMonth">
+                    </div>
+                    <div class="form-group" id="reportDepartmentGroup" style="display: none;">
+                        <label>القسم (اختياري):</label>
+                        <select id="reportDepartment">
+                            <option value="">جميع الأقسام</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="reportEmployeeGroup">
+                        <label>الموظف (اختياري):</label>
+                        <select id="reportEmployee">
+                            <option value="">جميع الموظفين</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="generateReportBtn">إنشاء التقرير</button>
+                    <button class="btn btn-success" id="exportExcelBtn" style="display: none;">تصدير Excel</button>
+                </div>
+            </div>
+            <div id="reportResults" class="report-results"></div>
+        </div>
+    </div>
+
+    <!-- Employee Modal -->
+    <div id="employeeModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">إضافة موظف جديد</h2>
+            <form id="employeeForm">
+                <input type="hidden" id="employeeId">
+                <div class="form-group">
+                    <label>الاسم الكامل:</label>
+                    <input type="text" id="employeeName" required>
+                </div>
+                <div class="form-group">
+                    <label>الرقم الوظيفي:</label>
+                    <input type="text" id="employeeNumber" required>
+                </div>
+                <div class="form-group">
+                    <label>الفرع:</label>
+                    <input type="text" id="employeeBranch" required>
+                </div>
+                <div class="form-group">
+                    <label>القسم:</label>
+                    <input type="text" id="employeeDepartment" required>
+                </div>
+                <div class="form-group">
+                    <label>المسمى الوظيفي:</label>
+                    <input type="text" id="employeePosition" required>
+                </div>
+                <div class="form-group">
+                    <label>الراتب الأساسي الشهري:</label>
+                    <input type="number" id="employeeSalary" step="0.01" required>
+                    <small style="color: #666; display: block; margin-top: 5px;">الراتب ثابت بغض النظر عن عدد أيام الشهر</small>
+                </div>
+                <div class="form-group">
+                    <label>ساعات العمل اليومية:</label>
+                    <input type="number" id="employeeWorkHours" step="0.5" min="0" value="8" required>
+                    <small style="color: #666; display: block; margin-top: 5px;">عدد ساعات العمل اليومية (لحساب العمل الإضافي والتأخيرات)</small>
+                </div>
+                <div class="form-group">
+                    <label>تاريخ التعيين:</label>
+                    <input type="date" id="employeeHireDate" required>
+                    <small style="color: #666; display: block; margin-top: 5px;">تاريخ بدء العمل (إلزامي)</small>
+                </div>
+                <div class="form-group">
+                    <label>الحالة:</label>
+                    <select id="employeeStatus">
+                        <option value="active">نشط</option>
+                        <option value="suspended">موقوف عن العمل</option>
+                        <option value="terminated">منتهية الخدمة</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>تاريخ تغيير الحالة:</label>
+                    <input type="date" id="employeeStatusChangeDate">
+                    <small style="color: #666; display: block; margin-top: 5px;">تاريخ بدء الحالة الحالية (يتم ملؤه تلقائياً عند تغيير الحالة)</small>
+                </div>
+                <div class="form-group" id="suspensionFields" style="display: none;">
+                    <label>نوع الإيقاف:</label>
+                    <select id="employeeSuspensionType">
+                        <option value="without_salary">إيقاف بدون راتب</option>
+                        <option value="with_salary">إيقاف براتب</option>
+                    </select>
+                </div>
+                <div class="form-group" id="suspensionDateField" style="display: none;">
+                    <label>تاريخ الإيقاف:</label>
+                    <input type="date" id="employeeSuspensionDate">
+                    <small style="color: #666; display: block; margin-top: 5px;">تاريخ بدء الإيقاف (إلزامي)</small>
+                </div>
+                <div class="form-group" id="terminationDateField" style="display: none;">
+                    <label>تاريخ آخر يوم عمل:</label>
+                    <input type="date" id="employeeTerminationDate">
+                    <small style="color: #666; display: block; margin-top: 5px;">تاريخ آخر يوم عمل (إلزامي)</small>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">حفظ</button>
+                    <button type="button" class="btn btn-secondary" id="cancelEmployeeBtn">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Deduction/Addition Modal -->
+    <!-- Deduction Management Modal -->
+    <div id="deductionManagementModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>إدارة الخصومات والإضافات</h2>
+            <div id="deductionsList" class="table-container" style="margin-top: 20px;">
+                <!-- Deductions list will be loaded here -->
+            </div>
+            <div class="form-actions" style="margin-top: 20px;">
+                <button class="btn btn-secondary" id="closeDeductionManagementBtn">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deductionModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="deductionModalTitle">إضافة خصم / إضافة</h2>
+            <form id="deductionForm">
+                <input type="hidden" id="deductionId">
+                <input type="hidden" id="deductionEmployeeId">
+                <input type="hidden" id="deductionMonth">
+                <div class="form-group">
+                    <label>نوع العملية:</label>
+                    <select id="deductionType" required>
+                        <option value="deduction">خصم</option>
+                        <option value="bonus">مكافأة</option>
+                        <option value="advance">سلف</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>المبلغ:</label>
+                    <input type="number" id="deductionAmount" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>الوصف:</label>
+                    <textarea id="deductionDescription"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">حفظ</button>
+                    <button type="button" class="btn btn-secondary" id="cancelDeductionBtn">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Salary Slip Modal -->
+    <div id="salarySlipModal" class="modal">
+        <div class="modal-content large">
+            <span class="close">&times;</span>
+            <div id="salarySlipContent" class="salary-slip">
+                <!-- Salary slip content will be generated here -->
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-success" id="savePdfBtn">حفظ PDF</button>
+                <button class="btn btn-primary" id="printSlipBtn">طباعة</button>
+                <button class="btn btn-secondary" id="closeSlipBtn">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Codes Modal -->
+    <div id="quickCodesModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>إدارة الرموز السريعة</h2>
+            <div class="form-group">
+                <label>اسم الرمز:</label>
+                <input type="text" id="newCodeName" placeholder="مثال: شفت-صباح">
+            </div>
+            <div class="form-group">
+                <label>اختر الموظفين:</label>
+                <div id="codeEmployeesChecklist" class="checklist" style="max-height: 300px;"></div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" id="saveCodeBtn">حفظ الرمز</button>
+                <button class="btn btn-secondary" id="closeCodesBtn">إغلاق</button>
+            </div>
+            <div style="margin-top: 20px;">
+                <h3>الرموز المحفوظة:</h3>
+                <div id="savedCodesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>برمجة وتصميم وإدارة: <strong>عبدالله عبدالرحمن عبود</strong></p>
+        <p>&copy; 2025 القرية الصغيرة للتجارة العامة - جميع الحقوق محفوظة</p>
+    </footer>
+
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="database.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+

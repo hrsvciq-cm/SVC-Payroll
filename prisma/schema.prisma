@@ -1,0 +1,145 @@
+// Prisma Schema - مطابق تماماً للنظام المحلي
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // استخدام DIRECT_URL مباشرة للمigrations والاتصال
+  // يمكنك تغييره إلى env("DATABASE_URL") بعد التأكد من أن DATABASE_URL يعمل
+  url       = env("DIRECT_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// جدول المستخدمين (للـ RBAC)
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String? // من Supabase Auth
+  role         String   @default("viewer") // admin, hr, finance, viewer
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+// جدول الموظفين - مطابق تماماً للبنية الحالية
+model Employee {
+  id               Int       @id @default(autoincrement())
+  employeeNumber   String    @unique
+  name             String
+  branch           String
+  department       String
+  position         String
+  salary           Float // الراتب الأساسي الشهري
+  workHours        Float     @default(8) // ساعات العمل اليومية
+  hireDate         DateTime? // تاريخ التعيين
+  status           String    @default("active") // active, suspended, terminated
+  statusChangeDate DateTime? // تاريخ تغيير الحالة
+  suspensionType   String? // without_salary, with_salary
+  suspensionDate   DateTime? // تاريخ الإيقاف
+  terminationDate  DateTime? // تاريخ إنهاء الخدمة
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  attendance Attendance[]
+  payroll    Payroll[]
+  deductions Deduction[]
+
+  @@index([employeeNumber])
+  @@index([department])
+  @@index([status])
+  @@index([status, terminationDate]) // Composite index for terminated employees filtering
+  @@index([hireDate]) // Index for hire date filtering
+  @@map("employees")
+}
+
+// جدول الحضور والانصراف - مطابق تماماً
+model Attendance {
+  id                  Int      @id @default(autoincrement())
+  employeeId          Int
+  date                String // YYYY-MM-DD format
+  status              String   @default("present") // present, absent, leave, holiday
+  absentType          String? // with_notice, without_notice (للغياب فقط)
+  overtimeHours       Float    @default(0)
+  timeDelayMinutes    Int      @default(0) // تأخير زمني
+  nonTimeDelayMinutes Int      @default(0) // تأخير غير زمني
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, date])
+  @@index([employeeId])
+  @@index([date])
+  @@index([employeeId, date]) // Composite index for common queries
+  @@index([status]) // Index for filtering by status
+  @@map("attendance")
+}
+
+// جدول الرواتب - مطابق تماماً
+model Payroll {
+  id                      Int       @id @default(autoincrement())
+  employeeId              Int
+  month                   String // YYYY-MM format
+  presentDays             Int       @default(0)
+  absentDays              Int       @default(0)
+  absentDaysWithNotice    Int       @default(0)
+  absentDaysWithoutNotice Int       @default(0)
+  leaveDays               Int       @default(0)
+  holidayDays             Int       @default(0)
+  daysDue                 Int? // عدد الأيام المستحقة
+  lastWorkingDay          DateTime? // آخر يوم عمل
+  overtimeHours           Float     @default(0)
+  timeDelayMinutes        Int       @default(0)
+  nonTimeDelayMinutes     Int       @default(0)
+  overtimePay             Float     @default(0)
+  timeDelayDeduction      Float     @default(0)
+  nonTimeDelayDeduction   Float     @default(0)
+  baseSalary              Float     @default(0)
+  totalDeductions         Float     @default(0)
+  totalBonuses            Float     @default(0)
+  totalAdvances           Float     @default(0)
+  netSalary               Float     @default(0)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, month])
+  @@index([employeeId])
+  @@index([month])
+  @@index([employeeId, month]) // Composite index (already covered by unique, but explicit for clarity)
+  @@map("payroll")
+}
+
+// جدول الخصومات والمكافآت والسلف - مطابق تماماً
+model Deduction {
+  id          Int      @id @default(autoincrement())
+  employeeId  Int
+  month       String // YYYY-MM format
+  type        String // deduction, bonus, advance
+  amount      Float
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([month])
+  @@index([employeeId, month]) // Composite index for common queries
+  @@index([type]) // Index for filtering by type
+  @@map("deductions")
+}
+
+// جدول الرموز السريعة - مطابق تماماً
+model QuickCode {
+  code        String   @id
+  employeeIds Int[] // Array of employee IDs
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("quick_codes")
+}

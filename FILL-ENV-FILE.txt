@@ -1,0 +1,12 @@
+انسخ هذا بالكامل إلى ملف .env (استبدل المحتوى الحالي):
+
+NEXT_PUBLIC_SUPABASE_URL=https://yglxbfjakoezxbrgopur.supabase.co
+
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=sb_publishable_RyeDeKku2AnMdFJl6iss1A_AsP5Zo8y
+
+DATABASE_URL="postgresql://postgres.yglxbfjakoezxbrgopur:m%403x%3Fu3x%40AR3ei%25@aws-1-eu-central-1.pooler.supabase.com:6543/postgres?pgbc"
+
+DIRECT_URL="postgresql://postgres.yglxbfjakoezxbrgopur:m%403x%3Fu3x%40AR3ei%25@aws-1-eu-central-1.pooler.supabase.com:5432/postgres"
+
+SUPABASE_SERVICE_ROLE_KEY=
+
