@@ -4,9 +4,9 @@ import { NextResponse } from 'next/server'
 /**
  * Security middleware for authentication and session management
  * - Validates environment variables
- * - Checks user authentication
- * - Validates session expiration
- * - Implements idle timeout (3 hours)
+ * - Checks user authentication using Supabase getUser()
+ * - Manages session cookies properly
+ * - Allows valid sessions to persist
  */
 export async function middleware(request) {
   // Validate environment variables
@@ -31,40 +31,7 @@ export async function middleware(request) {
     },
   })
 
-  // CRITICAL: Check for session tracking cookie
-  // This cookie helps us detect if browser was closed and reopened
-  const pathname = request.nextUrl.pathname
-  const allCookies = request.cookies.getAll()
-  const sessionTrackerCookie = allCookies.find(cookie => cookie.name === 'sb-session-tracker')
-  const supabaseCookies = allCookies.filter(cookie => 
-    cookie.name.startsWith('sb-') || 
-    cookie.name.includes('supabase') ||
-    cookie.name.includes('auth-token') ||
-    cookie.name.includes('refresh-token')
-  )
-
-  // If we're on a protected route and there are Supabase cookies but no session tracker,
-  // it means cookies survived browser closure (they were persistent) - clear them
-  if (pathname !== '/login' && supabaseCookies.length > 0 && !sessionTrackerCookie) {
-    // Cookies exist but no session tracker - they survived browser closure
-    // This means they were persistent cookies, not session cookies
-    // Clear them to prevent session restoration
-    supabaseCookies.forEach(cookie => {
-      response.cookies.set(cookie.name, '', {
-        expires: new Date(0),
-        path: '/',
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-      })
-    })
-    
-    // Redirect to login - session was restored from persistent cookies
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('expired', 'true')
-    return NextResponse.redirect(loginUrl)
-  }
-
+  // Create Supabase client with proper cookie handling
   const supabase = createServerClient(
     supabaseUrl,
     supabaseAnonKey,
@@ -74,84 +41,50 @@ export async function middleware(request) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          response = NextResponse.next({
-            request,
-          })
-          // Set cookies as session cookies ONLY (no expires/maxAge) for security
-          // This ensures cookies are cleared when browser is closed
-          // CRITICAL: This prevents refresh tokens from persisting after browser closure
           cookiesToSet.forEach(({ name, value, options }) => {
-            // Create session cookie options - FORCE session cookies only
-            // This is especially important for refresh tokens which could restore sessions
-            const sessionOptions = {
-              // Start with default secure options
+            // Preserve Supabase's cookie options but ensure proper settings
+            const cookieOptions = {
               sameSite: 'lax',
               secure: process.env.NODE_ENV === 'production',
               httpOnly: true,
               path: '/',
-              // Override with provided options (but remove expiration)
               ...options,
             }
             
-            // CRITICAL: Remove ALL expiration settings to make it a session cookie
-            // Session cookies are automatically cleared when browser is closed
-            // DO NOT set expires or maxAge - this would make cookies persistent
-            delete sessionOptions.expires
-            delete sessionOptions.maxAge
+            // Ensure secure settings
+            cookieOptions.sameSite = cookieOptions.sameSite || 'lax'
+            cookieOptions.secure = process.env.NODE_ENV === 'production'
+            cookieOptions.httpOnly = cookieOptions.httpOnly !== false
+            cookieOptions.path = cookieOptions.path || '/'
             
-            // Ensure proper cookie settings for security
-            // These settings ensure cookies are secure and session-only
-            sessionOptions.sameSite = sessionOptions.sameSite || 'lax'
-            sessionOptions.secure = process.env.NODE_ENV === 'production'
-            if (sessionOptions.httpOnly === undefined) {
-              sessionOptions.httpOnly = true
-            }
-            sessionOptions.path = sessionOptions.path || '/'
-            
-            // Set as session cookie (no expiration = session cookie)
-            // This ensures the cookie is cleared when browser closes
-            response.cookies.set(name, value, sessionOptions)
+            response.cookies.set(name, value, cookieOptions)
           })
-          
-          // CRITICAL: Set session tracker cookie when Supabase sets auth cookies
-          // This helps us detect if browser was closed and cookies survived
-          const hasAuthCookie = cookiesToSet.some(({ name }) => 
-            name.includes('auth-token') || name.includes('refresh-token')
-          )
-          
-          if (hasAuthCookie) {
-            // Set session tracker cookie (session cookie only)
-            // This cookie will be cleared when browser closes
-            // If it doesn't exist on next request, cookies survived browser closure
-            response.cookies.set('sb-session-tracker', Date.now().toString(), {
-              sameSite: 'lax',
-              secure: process.env.NODE_ENV === 'production',
-              httpOnly: true,
-              path: '/',
-              // NO expires, NO maxAge - session cookie only
-            })
-          }
         },
       },
     }
   )
 
-  // Handle login page - CRITICAL: Always clear all Supabase cookies to prevent session restoration
-  // This ensures that after browser closure, user must login again
-  if (pathname === '/login') {
-    // Get all cookies to check for Supabase cookies
-    const allCookies = request.cookies.getAll()
-    const supabaseCookies = allCookies.filter(cookie => 
-      cookie.name.startsWith('sb-') || 
-      cookie.name.includes('supabase') ||
-      cookie.name.includes('auth-token') ||
-      cookie.name.includes('refresh-token')
-    )
+  // Get current user - this validates the session with Supabase Auth server
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+  // Handle login page
+  if (request.nextUrl.pathname === '/login') {
+    // If user is authenticated, redirect to dashboard
+    if (user && !userError) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
     
-    // ALWAYS clear Supabase cookies when visiting login page
-    // This prevents automatic session restoration after browser closure
-    if (supabaseCookies.length > 0 || sessionTrackerCookie) {
+    // If there's an error (expired session, invalid token, etc.), clear cookies
+    if (userError) {
+      // Clear Supabase cookies on login page if session is invalid
+      const allCookies = request.cookies.getAll()
+      const supabaseCookies = allCookies.filter(cookie => 
+        cookie.name.startsWith('sb-') || 
+        cookie.name.includes('supabase') ||
+        cookie.name.includes('auth-token') ||
+        cookie.name.includes('refresh-token')
+      )
+      
       supabaseCookies.forEach(cookie => {
         response.cookies.set(cookie.name, '', {
           expires: new Date(0),
@@ -162,53 +95,26 @@ export async function middleware(request) {
         })
       })
       
-      // Clear session tracker cookie
-      if (sessionTrackerCookie) {
-        response.cookies.set('sb-session-tracker', '', {
-          expires: new Date(0),
-          path: '/',
-          httpOnly: true,
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production',
-        })
-      }
-      
-      // Sign out to ensure session is cleared server-side
-      // Ignore 403 errors (session may not exist)
-      try {
-        await supabase.auth.signOut()
-      } catch (signOutError) {
-        // Ignore 403 errors - session may not exist
-        // This prevents "prepared statement already exists" and 403 errors
-        if (signOutError?.status !== 403 && signOutError?.code !== '42P05') {
-          console.error('Sign out error:', signOutError)
-        }
-      }
+      // Only show expired message if query param is set
+      // Don't automatically set it here to avoid showing error on fresh login
     }
     
-    // After clearing cookies, check if there's still a valid session
-    // Use getUser() instead of getSession() for security (as recommended by Supabase)
-    // getUser() authenticates the data by contacting the Supabase Auth server
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    
-    if (user && !userError) {
-      // User is authenticated - redirect to dashboard
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
-    
-    // Allow access to login page (cookies have been cleared)
+    // Allow access to login page
     return response
   }
 
   // For protected routes, validate authentication
-  // CRITICAL: Use getUser() instead of getSession() for security
-  // getUser() authenticates the data by contacting the Supabase Auth server
-  // getSession() reads directly from cookies and may not be authentic
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-
-  // If no user or user error, clear cookies and redirect to login
   if (!user || userError) {
-    // Clear all Supabase cookies to prevent session restoration
+    // User is not authenticated or session is invalid
+    // Clear all Supabase cookies
+    const allCookies = request.cookies.getAll()
+    const supabaseCookies = allCookies.filter(cookie => 
+      cookie.name.startsWith('sb-') || 
+      cookie.name.includes('supabase') ||
+      cookie.name.includes('auth-token') ||
+      cookie.name.includes('refresh-token')
+    )
+    
     supabaseCookies.forEach(cookie => {
       response.cookies.set(cookie.name, '', {
         expires: new Date(0),
@@ -219,110 +125,22 @@ export async function middleware(request) {
       })
     })
     
-    // Clear session tracker cookie
-    if (sessionTrackerCookie) {
-      response.cookies.set('sb-session-tracker', '', {
-        expires: new Date(0),
-        path: '/',
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-      })
-    }
-    
     // Sign out to ensure session is cleared server-side
-    // Ignore 403 errors (session may not exist)
+    // Ignore errors (session may not exist)
     try {
       await supabase.auth.signOut()
     } catch (signOutError) {
-      // Ignore 403 errors - session may not exist
-      // This prevents "prepared statement already exists" and 403 errors
-      if (signOutError?.status !== 403 && signOutError?.code !== '42P05') {
-        console.error('Sign out error:', signOutError)
-      }
+      // Ignore 403 and other errors - session may not exist
+      // This prevents unnecessary error logs
     }
     
+    // Redirect to login with expired message
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('expired', 'true')
     return NextResponse.redirect(loginUrl)
   }
 
-  // CRITICAL SECURITY CHECK: Verify session tracker exists
-  // If user exists but no session tracker, cookies survived browser closure (persistent)
-  // Clear everything and force re-login
-  if (user && !sessionTrackerCookie) {
-    // Session exists but no tracker - cookies survived browser closure
-    // This means they were persistent cookies, not session cookies
-    // Clear all cookies and force re-login
-    supabaseCookies.forEach(cookie => {
-      response.cookies.set(cookie.name, '', {
-        expires: new Date(0),
-        path: '/',
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-      })
-    })
-    
-    // Clear session tracker cookie
-    response.cookies.set('sb-session-tracker', '', {
-      expires: new Date(0),
-      path: '/',
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    })
-    
-    // Sign out to ensure session is cleared server-side
-    // Ignore 403 errors (session may not exist)
-    try {
-      await supabase.auth.signOut()
-    } catch (signOutError) {
-      // Ignore 403 errors - session may not exist
-      // This prevents "prepared statement already exists" and 403 errors
-      if (signOutError?.status !== 403 && signOutError?.code !== '42P05') {
-        console.error('Sign out error:', signOutError)
-      }
-    }
-    
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('expired', 'true')
-    return NextResponse.redirect(loginUrl)
-  }
-
-  // Additional validation: Check if user is still valid
-  // getUser() already validates the session, so we just need to check the user
-  // No need to check session expiration separately - getUser() handles that
-  if (!user || userError) {
-    // Clear session tracker cookie
-    if (sessionTrackerCookie) {
-      response.cookies.set('sb-session-tracker', '', {
-        expires: new Date(0),
-        path: '/',
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-      })
-    }
-    
-    // Session user doesn't match current user - invalid session
-    // Sign out to ensure session is cleared server-side
-    // Ignore 403 errors (session may not exist)
-    try {
-      await supabase.auth.signOut()
-    } catch (signOutError) {
-      // Ignore 403 errors - session may not exist
-      // This prevents "prepared statement already exists" and 403 errors
-      if (signOutError?.status !== 403 && signOutError?.code !== '42P05') {
-        console.error('Sign out error:', signOutError)
-      }
-    }
-    
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('expired', 'true')
-    return NextResponse.redirect(loginUrl)
-  }
-
+  // User is authenticated - allow access to protected route
   return response
 }
 
@@ -334,8 +152,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
+     * - api routes (handled separately)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
-

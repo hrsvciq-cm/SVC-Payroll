@@ -64,14 +64,7 @@ function LoginForm() {
         // Clear any error messages
         setError('')
         
-        // Handle Remember Me: Browser will automatically save credentials if Remember Me is checked
-        // and autocomplete attributes are properly set
-        // Note: We don't store credentials in localStorage for security
-        // The browser's password manager handles this securely
-        
-        // CRITICAL: Clear any localStorage that might persist sessions
-        // This ensures session is ONLY in cookies (session cookies)
-        // Session cookies are automatically cleared when browser is closed
+        // Clear localStorage to ensure session is only in cookies
         if (typeof window !== 'undefined') {
           const supabaseKeys = Object.keys(localStorage).filter(key => 
             key.startsWith('sb-') || 
@@ -87,34 +80,10 @@ function LoginForm() {
           })
         }
         
-        // The session is automatically saved by Supabase SSR in cookies (session cookies)
-        // Wait to ensure cookies are set and middleware can read them
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        // Verify session is accessible to ensure it's properly saved in cookies
-        let verifySession = null
-        let attempts = 0
-        const maxAttempts = 3
-        
-        while (attempts < maxAttempts && !verifySession) {
-          const { data: { session } } = await supabase.auth.getSession()
-          if (session && session.user) {
-            verifySession = session
-            break
-          }
-          attempts++
-          await new Promise(resolve => setTimeout(resolve, 200))
-        }
-        
-        if (verifySession && verifySession.user) {
-          // Use window.location.replace for full page reload
-          // This ensures middleware gets fresh cookies and validates session
-          // Session is stored in cookies only (session cookies = cleared on browser close)
-          window.location.replace('/dashboard')
-        } else {
-          setError('حدث خطأ في حفظ الجلسة. يرجى المحاولة مرة أخرى.')
-          setLoading(false)
-        }
+        // Supabase SSR automatically saves session in cookies
+        // Use window.location.replace for full page reload
+        // This ensures middleware validates the session properly
+        window.location.replace('/dashboard')
       } else {
         setError('حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.')
         setLoading(false)
