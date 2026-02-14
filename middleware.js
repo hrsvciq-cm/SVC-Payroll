@@ -174,7 +174,16 @@ export async function middleware(request) {
       }
       
       // Sign out to ensure session is cleared server-side
-      await supabase.auth.signOut()
+      // Ignore 403 errors (session may not exist)
+      try {
+        await supabase.auth.signOut()
+      } catch (signOutError) {
+        // Ignore 403 errors - session may not exist
+        // This prevents "prepared statement already exists" and 403 errors
+        if (signOutError?.status !== 403 && signOutError?.code !== '42P05') {
+          console.error('Sign out error:', signOutError)
+        }
+      }
     }
     
     // After clearing cookies, check if there's still a valid session
@@ -222,7 +231,16 @@ export async function middleware(request) {
     }
     
     // Sign out to ensure session is cleared server-side
-    await supabase.auth.signOut()
+    // Ignore 403 errors (session may not exist)
+    try {
+      await supabase.auth.signOut()
+    } catch (signOutError) {
+      // Ignore 403 errors - session may not exist
+      // This prevents "prepared statement already exists" and 403 errors
+      if (signOutError?.status !== 403 && signOutError?.code !== '42P05') {
+        console.error('Sign out error:', signOutError)
+      }
+    }
     
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('expired', 'true')
@@ -255,7 +273,18 @@ export async function middleware(request) {
       secure: process.env.NODE_ENV === 'production',
     })
     
-    await supabase.auth.signOut()
+    // Sign out to ensure session is cleared server-side
+    // Ignore 403 errors (session may not exist)
+    try {
+      await supabase.auth.signOut()
+    } catch (signOutError) {
+      // Ignore 403 errors - session may not exist
+      // This prevents "prepared statement already exists" and 403 errors
+      if (signOutError?.status !== 403 && signOutError?.code !== '42P05') {
+        console.error('Sign out error:', signOutError)
+      }
+    }
+    
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('expired', 'true')
     return NextResponse.redirect(loginUrl)
@@ -277,7 +306,18 @@ export async function middleware(request) {
     }
     
     // Session user doesn't match current user - invalid session
-    await supabase.auth.signOut()
+    // Sign out to ensure session is cleared server-side
+    // Ignore 403 errors (session may not exist)
+    try {
+      await supabase.auth.signOut()
+    } catch (signOutError) {
+      // Ignore 403 errors - session may not exist
+      // This prevents "prepared statement already exists" and 403 errors
+      if (signOutError?.status !== 403 && signOutError?.code !== '42P05') {
+        console.error('Sign out error:', signOutError)
+      }
+    }
+    
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('expired', 'true')
     return NextResponse.redirect(loginUrl)

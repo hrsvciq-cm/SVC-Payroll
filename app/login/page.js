@@ -16,35 +16,22 @@ function LoginForm() {
   const [setupRequired, setSetupRequired] = useState(false)
 
   useEffect(() => {
-    // Clear any existing session on page load
-    // This ensures no persistent sessions remain
-    const clearExistingSession = async () => {
-      try {
-        const supabase = createClient()
-        // Sign out any existing session
-        await supabase.auth.signOut()
-        
-        // Clear localStorage completely
-        if (typeof window !== 'undefined') {
-          const supabaseKeys = Object.keys(localStorage).filter(key => 
-            key.startsWith('sb-') || 
-            key.includes('supabase') ||
-            key.startsWith('supabase.')
-          )
-          supabaseKeys.forEach(key => {
-            try {
-              localStorage.removeItem(key)
-            } catch (e) {
-              // Ignore errors
-            }
-          })
+    // Clear localStorage only (middleware handles signOut server-side)
+    // This prevents duplicate signOut calls that cause 403 errors
+    if (typeof window !== 'undefined') {
+      const supabaseKeys = Object.keys(localStorage).filter(key => 
+        key.startsWith('sb-') || 
+        key.includes('supabase') ||
+        key.startsWith('supabase.')
+      )
+      supabaseKeys.forEach(key => {
+        try {
+          localStorage.removeItem(key)
+        } catch (e) {
+          // Ignore errors
         }
-      } catch (e) {
-        // Ignore errors during cleanup
-      }
+      })
     }
-    
-    clearExistingSession()
     
     if (searchParams.get('setup') === 'required') {
       setSetupRequired(true)
