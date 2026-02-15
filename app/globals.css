@@ -25,3 +25,54 @@ a {
   text-decoration: none;
 }
 
+/* Responsive Utilities */
+@media (max-width: 639px) {
+  /* Mobile styles */
+  .mobile-hidden {
+    display: none !important;
+  }
+}
+
+@media (min-width: 640px) {
+  /* Tablet and up */
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Desktop and up */
+  .tablet-only {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1536px) {
+  /* Large screens/TVs */
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+/* Responsive Table Wrapper */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+  min-width: 100%;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .table-responsive table {
+    font-size: 12px;
+  }
+  
+  .table-responsive th,
+  .table-responsive td {
+    padding: 8px 4px !important;
+  }
+}
+

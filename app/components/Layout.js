@@ -14,6 +14,7 @@ export default function Layout({ children }) {
   const pathname = usePathname()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const lastActivityRef = useRef(Date.now())
   const timeoutIdRef = useRef(null)
   const checkIntervalRef = useRef(null)
@@ -103,10 +104,6 @@ export default function Layout({ children }) {
         }
       }, CHECK_INTERVAL)
 
-      // Note: We don't manually sign out on page navigation
-      // Session cookies are automatically cleared when browser is closed
-      // Manual sign out would interfere with normal page navigation
-
       // Cleanup function
       return () => {
         if (timeoutIdRef.current) {
@@ -130,6 +127,11 @@ export default function Layout({ children }) {
     router.push('/login')
     router.refresh()
   }, [router])
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [pathname])
 
   // Define navItems before conditional return (React Hooks rule)
   const navItems = useMemo(() => [
@@ -164,36 +166,67 @@ export default function Layout({ children }) {
       <header style={{
         background: 'white',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        padding: '16px 24px',
-        marginBottom: '24px'
+        padding: '12px 16px',
+        marginBottom: '16px'
       }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          maxWidth: '1400px',
-          margin: '0 auto'
+          maxWidth: '1920px',
+          margin: '0 auto',
+          width: '100%'
         }}>
-          <div>
-            <h1 style={{ 
-              fontSize: '24px', 
-              fontWeight: 'bold', 
-              margin: 0,
-              color: '#333'
-            }}>
-              نظام إدارة الدوام والرواتب
-            </h1>
-            <p style={{ 
-              fontSize: '14px', 
-              color: '#666', 
-              margin: '4px 0 0 0' 
-            }}>
-              القرية الصغيرة للتجارة العامة
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+            {/* Mobile Hamburger Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{
+                display: 'block',
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                padding: '8px',
+                color: '#333'
+              }}
+              className="mobile-only"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? '✕' : '☰'}
+            </button>
+            
+            <div>
+              <h1 style={{ 
+                fontSize: 'clamp(18px, 4vw, 24px)', 
+                fontWeight: 'bold', 
+                margin: 0,
+                color: '#333'
+              }}>
+                نظام إدارة الدوام والرواتب
+              </h1>
+              <p style={{ 
+                fontSize: 'clamp(12px, 2.5vw, 14px)', 
+                color: '#666', 
+                margin: '4px 0 0 0' 
+              }}>
+                القرية الصغيرة للتجارة العامة
+              </p>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '12px',
+            flexWrap: 'wrap'
+          }}>
             {user && (
-              <span style={{ color: '#666' }}>
+              <span style={{ 
+                color: '#666',
+                fontSize: 'clamp(12px, 2.5vw, 14px)',
+                display: 'none'
+              }} className="tablet-only">
                 {user.email}
               </span>
             )}
@@ -206,7 +239,8 @@ export default function Layout({ children }) {
                 border: 'none',
                 borderRadius: '6px',
                 cursor: 'pointer',
-                fontSize: '14px'
+                fontSize: 'clamp(12px, 2.5vw, 14px)',
+                whiteSpace: 'nowrap'
               }}
             >
               تسجيل الخروج
@@ -215,18 +249,61 @@ export default function Layout({ children }) {
         </div>
       </header>
 
-      {/* Navigation */}
+      {/* Mobile Navigation Menu */}
+      {mobileMenuOpen && (
+        <nav style={{
+          background: 'white',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          marginBottom: '16px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100
+        }} className="mobile-only">
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '8px'
+          }}>
+            {navItems.map((item) => (
+              <a
+                key={item.path}
+                href={item.path}
+                onClick={() => setMobileMenuOpen(false)}
+                style={{
+                  padding: '12px 16px',
+                  textDecoration: 'none',
+                  color: pathname === item.path ? '#667eea' : '#666',
+                  background: pathname === item.path ? '#f0f0ff' : 'transparent',
+                  fontWeight: pathname === item.path ? '600' : '400',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  transition: 'all 0.2s',
+                  borderRadius: '6px',
+                  marginBottom: '4px'
+                }}
+              >
+                <span style={{ fontSize: '20px' }}>{item.icon}</span>
+                <span>{item.label}</span>
+              </a>
+            ))}
+          </div>
+        </nav>
+      )}
+
+      {/* Desktop Navigation */}
       <nav style={{
         background: 'white',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
         marginBottom: '24px'
-      }}>
+      }} className="mobile-hidden">
         <div style={{
-          maxWidth: '1400px',
+          maxWidth: '1920px',
           margin: '0 auto',
           display: 'flex',
           gap: '8px',
-          padding: '0 24px'
+          padding: '0 24px',
+          flexWrap: 'wrap'
         }}>
           {navItems.map((item) => (
             <a
@@ -241,7 +318,8 @@ export default function Layout({ children }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                fontSize: 'clamp(13px, 1.5vw, 14px)'
               }}
             >
               <span>{item.icon}</span>
@@ -254,10 +332,11 @@ export default function Layout({ children }) {
       {/* Main Content */}
       <main style={{
         width: '100%',
-        maxWidth: '100%',
+        maxWidth: '1920px',
         margin: '0 auto',
-        padding: '0 24px 24px',
-        minHeight: 'calc(100vh - 300px)'
+        padding: '0 clamp(16px, 4vw, 24px) clamp(16px, 4vw, 24px)',
+        minHeight: 'calc(100vh - 300px)',
+        flex: 1
       }}>
         {children}
       </main>
@@ -265,11 +344,11 @@ export default function Layout({ children }) {
       {/* Footer */}
       <footer style={{
         background: '#f8f9fa',
-        padding: '20px 24px',
+        padding: 'clamp(16px, 3vw, 20px) clamp(16px, 4vw, 24px)',
         textAlign: 'center',
         borderTop: '2px solid #ddd',
         color: '#666',
-        fontSize: '14px',
+        fontSize: 'clamp(12px, 2vw, 14px)',
         marginTop: 'auto'
       }}>
         <p style={{ margin: '5px 0' }}>
@@ -279,7 +358,32 @@ export default function Layout({ children }) {
           © 2026 القرية الصغيرة للتجارة العامة - جميع الحقوق محفوظة
         </p>
       </footer>
+
+      <style jsx>{`
+        @media (max-width: 639px) {
+          .mobile-only {
+            display: block !important;
+          }
+          .mobile-hidden {
+            display: none !important;
+          }
+        }
+        
+        @media (min-width: 640px) {
+          .mobile-only {
+            display: none !important;
+          }
+          .mobile-hidden {
+            display: block !important;
+          }
+        }
+        
+        @media (min-width: 768px) {
+          .tablet-only {
+            display: block !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
-

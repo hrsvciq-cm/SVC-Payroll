@@ -445,19 +445,21 @@ export default function EmployeesPage() {
       <div style={{
         background: 'white',
         borderRadius: '8px',
-        padding: '24px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        padding: 'clamp(16px, 3vw, 24px)',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        maxWidth: '1920px',
+        margin: '0 auto'
       }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '24px',
+          marginBottom: 'clamp(16px, 3vw, 24px)',
           flexWrap: 'wrap',
-          gap: '16px'
+          gap: 'clamp(12px, 2vw, 16px)'
         }}>
           <h1 style={{ 
-            fontSize: '28px', 
+            fontSize: 'clamp(20px, 5vw, 28px)', 
             fontWeight: 'bold',
             color: '#333',
             margin: 0
@@ -467,14 +469,15 @@ export default function EmployeesPage() {
           <button
             onClick={handleOpenModal}
             style={{
-              padding: '10px 20px',
+              padding: 'clamp(8px, 1.5vw, 10px) clamp(16px, 3vw, 20px)',
               background: '#667eea',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
               cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600'
+              fontSize: 'clamp(12px, 2.5vw, 14px)',
+              fontWeight: '600',
+              whiteSpace: 'nowrap'
             }}
           >
             إضافة موظف جديد
@@ -484,22 +487,25 @@ export default function EmployeesPage() {
         {/* Tabs */}
         <div style={{
           display: 'flex',
-          gap: '8px',
-          marginBottom: '24px',
-          borderBottom: '2px solid #eee'
+          gap: 'clamp(4px, 1vw, 8px)',
+          marginBottom: 'clamp(16px, 3vw, 24px)',
+          borderBottom: '2px solid #eee',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch'
         }}>
           <button
             onClick={() => setActiveTab('active')}
             style={{
-              padding: '12px 24px',
+              padding: 'clamp(10px, 2vw, 12px) clamp(16px, 3vw, 24px)',
               background: activeTab === 'active' ? '#667eea' : 'transparent',
               color: activeTab === 'active' ? 'white' : '#666',
               border: 'none',
               borderBottom: activeTab === 'active' ? '2px solid #667eea' : '2px solid transparent',
               cursor: 'pointer',
-              fontSize: '14px',
+              fontSize: 'clamp(12px, 2.5vw, 14px)',
               fontWeight: '600',
-              marginBottom: '-2px'
+              marginBottom: '-2px',
+              whiteSpace: 'nowrap'
             }}
           >
             نشط ({activeCount})
@@ -507,15 +513,16 @@ export default function EmployeesPage() {
           <button
             onClick={() => setActiveTab('suspended')}
             style={{
-              padding: '12px 24px',
+              padding: 'clamp(10px, 2vw, 12px) clamp(16px, 3vw, 24px)',
               background: activeTab === 'suspended' ? '#f093fb' : 'transparent',
               color: activeTab === 'suspended' ? 'white' : '#666',
               border: 'none',
               borderBottom: activeTab === 'suspended' ? '2px solid #f093fb' : '2px solid transparent',
               cursor: 'pointer',
-              fontSize: '14px',
+              fontSize: 'clamp(12px, 2.5vw, 14px)',
               fontWeight: '600',
-              marginBottom: '-2px'
+              marginBottom: '-2px',
+              whiteSpace: 'nowrap'
             }}
           >
             موقوف ({suspendedCount})
@@ -523,15 +530,16 @@ export default function EmployeesPage() {
           <button
             onClick={() => setActiveTab('terminated')}
             style={{
-              padding: '12px 24px',
+              padding: 'clamp(10px, 2vw, 12px) clamp(16px, 3vw, 24px)',
               background: activeTab === 'terminated' ? '#dc3545' : 'transparent',
               color: activeTab === 'terminated' ? 'white' : '#666',
               border: 'none',
               borderBottom: activeTab === 'terminated' ? '2px solid #dc3545' : '2px solid transparent',
               cursor: 'pointer',
-              fontSize: '14px',
+              fontSize: 'clamp(12px, 2.5vw, 14px)',
               fontWeight: '600',
-              marginBottom: '-2px'
+              marginBottom: '-2px',
+              whiteSpace: 'nowrap'
             }}
           >
             منتهي الخدمة ({terminatedCount})
@@ -539,7 +547,7 @@ export default function EmployeesPage() {
         </div>
 
         {/* Search */}
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: 'clamp(16px, 3vw, 20px)' }}>
           <input
             type="text"
             placeholder="بحث عن موظف..."
@@ -547,11 +555,11 @@ export default function EmployeesPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
               width: '100%',
-              maxWidth: '400px',
-              padding: '10px',
+              maxWidth: '100%',
+              padding: 'clamp(8px, 1.5vw, 10px)',
               border: '1px solid #ddd',
               borderRadius: '6px',
-              fontSize: '14px'
+              fontSize: 'clamp(12px, 2.5vw, 14px)'
             }}
           />
         </div>
@@ -565,30 +573,81 @@ export default function EmployeesPage() {
             <p>لا توجد موظفين في هذه الفئة</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div className="table-responsive" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <table style={{
               width: '100%',
-              borderCollapse: 'collapse'
+              borderCollapse: 'collapse',
+              minWidth: '800px'
             }}>
               <thead>
                 <tr style={{
                   background: '#f8f9fa',
                   borderBottom: '2px solid #ddd'
                 }}>
-                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>الرقم الوظيفي</th>
-                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>الاسم</th>
-                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>القسم</th>
-                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>المسمى الوظيفي</th>
-                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>الراتب الأساسي</th>
-                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>الحالة</th>
-                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>تاريخ تغيير الحالة</th>
+                  <th style={{ 
+                    padding: 'clamp(8px, 1.5vw, 12px)', 
+                    textAlign: 'right', 
+                    fontWeight: '600',
+                    fontSize: 'clamp(12px, 2.5vw, 14px)'
+                  }}>الرقم الوظيفي</th>
+                  <th style={{ 
+                    padding: 'clamp(8px, 1.5vw, 12px)', 
+                    textAlign: 'right', 
+                    fontWeight: '600',
+                    fontSize: 'clamp(12px, 2.5vw, 14px)'
+                  }}>الاسم</th>
+                  <th style={{ 
+                    padding: 'clamp(8px, 1.5vw, 12px)', 
+                    textAlign: 'right', 
+                    fontWeight: '600',
+                    fontSize: 'clamp(12px, 2.5vw, 14px)'
+                  }}>القسم</th>
+                  <th style={{ 
+                    padding: 'clamp(8px, 1.5vw, 12px)', 
+                    textAlign: 'right', 
+                    fontWeight: '600',
+                    fontSize: 'clamp(12px, 2.5vw, 14px)'
+                  }}>المسمى الوظيفي</th>
+                  <th style={{ 
+                    padding: 'clamp(8px, 1.5vw, 12px)', 
+                    textAlign: 'right', 
+                    fontWeight: '600',
+                    fontSize: 'clamp(12px, 2.5vw, 14px)'
+                  }}>الراتب الأساسي</th>
+                  <th style={{ 
+                    padding: 'clamp(8px, 1.5vw, 12px)', 
+                    textAlign: 'right', 
+                    fontWeight: '600',
+                    fontSize: 'clamp(12px, 2.5vw, 14px)'
+                  }}>الحالة</th>
+                  <th style={{ 
+                    padding: 'clamp(8px, 1.5vw, 12px)', 
+                    textAlign: 'right', 
+                    fontWeight: '600',
+                    fontSize: 'clamp(12px, 2.5vw, 14px)'
+                  }}>تاريخ تغيير الحالة</th>
                   {activeTab === 'terminated' && (
-                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>تاريخ إنهاء الخدمة</th>
+                    <th style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)', 
+                      textAlign: 'right', 
+                      fontWeight: '600',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>تاريخ إنهاء الخدمة</th>
                   )}
                   {activeTab === 'suspended' && (
-                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>تاريخ الإيقاف</th>
+                    <th style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)', 
+                      textAlign: 'right', 
+                      fontWeight: '600',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>تاريخ الإيقاف</th>
                   )}
-                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>الإجراءات</th>
+                  <th style={{ 
+                    padding: 'clamp(8px, 1.5vw, 12px)', 
+                    textAlign: 'right', 
+                    fontWeight: '600',
+                    fontSize: 'clamp(12px, 2.5vw, 14px)'
+                  }}>الإجراءات</th>
                 </tr>
               </thead>
               <tbody>
@@ -596,50 +655,82 @@ export default function EmployeesPage() {
                   <tr key={emp.id} style={{
                     borderBottom: '1px solid #eee'
                   }}>
-                    <td style={{ padding: '12px' }}>{emp.employeeNumber}</td>
-                    <td style={{ padding: '12px' }}>{emp.name}</td>
-                    <td style={{ padding: '12px' }}>{emp.department}</td>
-                    <td style={{ padding: '12px' }}>{emp.position}</td>
-                    <td style={{ padding: '12px' }}>{formatCurrency(emp.salary)}</td>
-                    <td style={{ padding: '12px' }}>
+                    <td style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>{emp.employeeNumber}</td>
+                    <td style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>{emp.name}</td>
+                    <td style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>{emp.department}</td>
+                    <td style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>{emp.position}</td>
+                    <td style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>{formatCurrency(emp.salary)}</td>
+                    <td style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>
                       <span style={{
                         padding: '4px 12px',
                         borderRadius: '12px',
-                        fontSize: '12px',
+                        fontSize: 'clamp(10px, 2vw, 12px)',
                         fontWeight: '600',
+                        whiteSpace: 'nowrap',
                         background: emp.status === 'active' ? '#d4edda' : emp.status === 'suspended' ? '#fff3cd' : '#f8d7da',
                         color: emp.status === 'active' ? '#155724' : emp.status === 'suspended' ? '#856404' : '#721c24'
                       }}>
                         {emp.status === 'active' ? 'نشط' : emp.status === 'suspended' ? 'موقوف' : 'منتهي'}
                       </span>
                     </td>
-                    <td style={{ padding: '12px' }}>
+                    <td style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>
                       {emp.statusChangeDate ? (
                         <span>من: {new Date(emp.statusChangeDate).toLocaleDateString('ar-IQ', { year: 'numeric', month: '2-digit', day: '2-digit' })}</span>
                       ) : '-'}
                     </td>
                     {activeTab === 'terminated' && (
-                      <td style={{ padding: '12px' }}>
+                      <td style={{ 
+                        padding: 'clamp(8px, 1.5vw, 12px)',
+                        fontSize: 'clamp(12px, 2.5vw, 14px)'
+                      }}>
                         {emp.terminationDate ? new Date(emp.terminationDate).toLocaleDateString('ar-IQ') : '-'}
                       </td>
                     )}
                     {activeTab === 'suspended' && (
-                      <td style={{ padding: '12px' }}>
+                      <td style={{ 
+                        padding: 'clamp(8px, 1.5vw, 12px)',
+                        fontSize: 'clamp(12px, 2.5vw, 14px)'
+                      }}>
                         {emp.suspensionDate ? new Date(emp.suspensionDate).toLocaleDateString('ar-IQ') : '-'}
                       </td>
                     )}
-                    <td style={{ padding: '12px' }}>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <td style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>
+                      <div style={{ display: 'flex', gap: 'clamp(4px, 1vw, 8px)', flexWrap: 'wrap' }}>
                         <button
                           onClick={() => handleEdit(emp)}
                           style={{
-                            padding: '6px 12px',
+                            padding: 'clamp(4px, 0.8vw, 6px) clamp(8px, 1.5vw, 12px)',
                             background: '#667eea',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
                             cursor: 'pointer',
-                            fontSize: '12px'
+                            fontSize: 'clamp(10px, 2vw, 12px)',
+                            whiteSpace: 'nowrap'
                           }}
                         >
                           تعديل
@@ -647,13 +738,14 @@ export default function EmployeesPage() {
                         <button
                           onClick={() => handleChangeStatus(emp)}
                           style={{
-                            padding: '6px 12px',
+                            padding: 'clamp(4px, 0.8vw, 6px) clamp(8px, 1.5vw, 12px)',
                             background: '#6c757d',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
                             cursor: 'pointer',
-                            fontSize: '12px'
+                            fontSize: 'clamp(10px, 2vw, 12px)',
+                            whiteSpace: 'nowrap'
                           }}
                         >
                           تغيير الحالة
@@ -662,13 +754,14 @@ export default function EmployeesPage() {
                           <button
                             onClick={() => handleDelete(emp)}
                             style={{
-                              padding: '6px 12px',
+                              padding: 'clamp(4px, 0.8vw, 6px) clamp(8px, 1.5vw, 12px)',
                               background: '#dc3545',
                               color: 'white',
                               border: 'none',
                               borderRadius: '4px',
                               cursor: 'pointer',
-                              fontSize: '12px'
+                              fontSize: 'clamp(10px, 2vw, 12px)',
+                              whiteSpace: 'nowrap'
                             }}
                           >
                             حذف
@@ -708,13 +801,14 @@ export default function EmployeesPage() {
             style={{
               background: 'white',
               borderRadius: '8px',
-              padding: '30px',
+              padding: 'clamp(20px, 4vw, 30px)',
               width: '100%',
-              maxWidth: '600px',
+              maxWidth: 'min(600px, 95vw)',
               maxHeight: '90vh',
               overflowY: 'auto',
               position: 'relative',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+              boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+              margin: '0 clamp(10px, 2vw, 20px)'
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -722,10 +816,10 @@ export default function EmployeesPage() {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '24px'
+              marginBottom: 'clamp(16px, 3vw, 24px)'
             }}>
               <h2 style={{
-                fontSize: '24px',
+                fontSize: 'clamp(18px, 4vw, 24px)',
                 fontWeight: 'bold',
                 color: '#333',
                 margin: 0

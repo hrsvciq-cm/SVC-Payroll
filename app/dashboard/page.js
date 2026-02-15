@@ -133,14 +133,15 @@ export default function DashboardPage() {
     <Layout>
       <div className="dashboard-main-container" style={{
         width: '100%',
-        maxWidth: '100%',
+        maxWidth: '1920px',
+        margin: '0 auto',
         background: 'white',
         borderRadius: '8px',
-        padding: '40px',
+        padding: 'clamp(16px, 4vw, 40px)',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
         <h1 style={{ 
-          fontSize: '28px', 
+          fontSize: 'clamp(20px, 5vw, 28px)', 
           fontWeight: 'bold', 
           marginBottom: '8px',
           color: '#333'
@@ -148,9 +149,9 @@ export default function DashboardPage() {
           لوحة التحكم - دوام الموظفين
         </h1>
         <p style={{ 
-          fontSize: '16px', 
+          fontSize: 'clamp(14px, 3vw, 16px)', 
           color: '#666',
-          marginBottom: '32px'
+          marginBottom: 'clamp(20px, 4vw, 32px)'
         }}>
           مرحباً بك في نظام إدارة الدوام والرواتب
         </p>
@@ -159,13 +160,13 @@ export default function DashboardPage() {
         <div style={{
           background: '#f8f9fa',
           borderRadius: '8px',
-          padding: '20px',
-          marginBottom: '24px'
+          padding: 'clamp(16px, 3vw, 20px)',
+          marginBottom: 'clamp(16px, 3vw, 24px)'
         }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '16px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
+            gap: 'clamp(12px, 2vw, 16px)',
             marginBottom: '16px'
           }}>
             <div>
@@ -284,166 +285,166 @@ export default function DashboardPage() {
         {/* Basic Statistics Cards */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '20px',
-          marginBottom: '32px'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
+          gap: 'clamp(12px, 2.5vw, 20px)',
+          marginBottom: 'clamp(20px, 4vw, 32px)'
         }}>
           <div style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             borderRadius: '12px',
-            padding: '24px',
+            padding: 'clamp(16px, 3vw, 24px)',
             color: 'white'
           }}>
-            <div style={{ fontSize: '32px', marginBottom: '8px' }}>👥</div>
-            <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '4px' }}>
+            <div style={{ fontSize: 'clamp(24px, 5vw, 32px)', marginBottom: '8px' }}>👥</div>
+            <div style={{ fontSize: 'clamp(28px, 6vw, 36px)', fontWeight: 'bold', marginBottom: '4px' }}>
               {stats.totalEmployees}
             </div>
-            <div style={{ fontSize: '14px', opacity: 0.9 }}>عدد الموظفين</div>
+            <div style={{ fontSize: 'clamp(12px, 2.5vw, 14px)', opacity: 0.9 }}>عدد الموظفين</div>
           </div>
 
           <div style={{
             background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
             borderRadius: '12px',
-            padding: '24px',
+            padding: 'clamp(16px, 3vw, 24px)',
             color: 'white'
           }}>
-            <div style={{ fontSize: '32px', marginBottom: '8px' }}>✅</div>
-            <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '4px' }}>
+            <div style={{ fontSize: 'clamp(24px, 5vw, 32px)', marginBottom: '8px' }}>✅</div>
+            <div style={{ fontSize: 'clamp(28px, 6vw, 36px)', fontWeight: 'bold', marginBottom: '4px' }}>
               {stats.activeEmployees}
             </div>
-            <div style={{ fontSize: '14px', opacity: 0.9 }}>موظفين نشطين</div>
+            <div style={{ fontSize: 'clamp(12px, 2.5vw, 14px)', opacity: 0.9 }}>موظفين نشطين</div>
           </div>
 
           <div style={{
             background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
             borderRadius: '12px',
-            padding: '24px',
+            padding: 'clamp(16px, 3vw, 24px)',
             color: 'white'
           }}>
-            <div style={{ fontSize: '32px', marginBottom: '8px' }}>⏸️</div>
-            <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '4px' }}>
+            <div style={{ fontSize: 'clamp(24px, 5vw, 32px)', marginBottom: '8px' }}>⏸️</div>
+            <div style={{ fontSize: 'clamp(28px, 6vw, 36px)', fontWeight: 'bold', marginBottom: '4px' }}>
               {stats.suspendedEmployees}
             </div>
-            <div style={{ fontSize: '14px', opacity: 0.9 }}>موظفين موقوفين</div>
+            <div style={{ fontSize: 'clamp(12px, 2.5vw, 14px)', opacity: 0.9 }}>موظفين موقوفين</div>
           </div>
 
           <div style={{
             background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
             borderRadius: '12px',
-            padding: '24px',
+            padding: 'clamp(16px, 3vw, 24px)',
             color: 'white'
           }}>
-            <div style={{ fontSize: '32px', marginBottom: '8px' }}>📅</div>
-            <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '4px' }}>
+            <div style={{ fontSize: 'clamp(24px, 5vw, 32px)', marginBottom: '8px' }}>📅</div>
+            <div style={{ fontSize: 'clamp(28px, 6vw, 36px)', fontWeight: 'bold', marginBottom: '4px' }}>
               {stats.todayAttendance}
             </div>
-            <div style={{ fontSize: '14px', opacity: 0.9 }}>دوام اليوم</div>
+            <div style={{ fontSize: 'clamp(12px, 2.5vw, 14px)', opacity: 0.9 }}>دوام اليوم</div>
           </div>
         </div>
 
         {/* Detailed Statistics Cards */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px',
-          marginBottom: '32px'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
+          gap: 'clamp(12px, 2vw, 16px)',
+          marginBottom: 'clamp(20px, 4vw, 32px)'
         }}>
           <div style={{
             background: 'white',
             borderRadius: '12px',
-            padding: '20px',
+            padding: 'clamp(16px, 3vw, 20px)',
             border: '1px solid #e0e0e0',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '28px', marginBottom: '8px' }}>🎉</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
+            <div style={{ fontSize: 'clamp(20px, 4vw, 28px)', marginBottom: '8px' }}>🎉</div>
+            <div style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
               {stats.holidayDays}
             </div>
-            <div style={{ fontSize: '13px', color: '#666' }}>أيام العطل</div>
+            <div style={{ fontSize: 'clamp(11px, 2vw, 13px)', color: '#666' }}>أيام العطل</div>
           </div>
 
           <div style={{
             background: 'white',
             borderRadius: '12px',
-            padding: '20px',
+            padding: 'clamp(16px, 3vw, 20px)',
             border: '1px solid #e0e0e0',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '28px', marginBottom: '8px' }}>🏖️</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
+            <div style={{ fontSize: 'clamp(20px, 4vw, 28px)', marginBottom: '8px' }}>🏖️</div>
+            <div style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
               {stats.leaveDays}
             </div>
-            <div style={{ fontSize: '13px', color: '#666' }}>أيام الإجازة</div>
+            <div style={{ fontSize: 'clamp(11px, 2vw, 13px)', color: '#666' }}>أيام الإجازة</div>
           </div>
 
           <div style={{
             background: 'white',
             borderRadius: '12px',
-            padding: '20px',
+            padding: 'clamp(16px, 3vw, 20px)',
             border: '1px solid #e0e0e0',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '28px', marginBottom: '8px' }}>❌</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
+            <div style={{ fontSize: 'clamp(20px, 4vw, 28px)', marginBottom: '8px' }}>❌</div>
+            <div style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
               {stats.absentDays}
             </div>
-            <div style={{ fontSize: '13px', color: '#666' }}>أيام الغياب</div>
+            <div style={{ fontSize: 'clamp(11px, 2vw, 13px)', color: '#666' }}>أيام الغياب</div>
           </div>
 
           <div style={{
             background: 'white',
             borderRadius: '12px',
-            padding: '20px',
+            padding: 'clamp(16px, 3vw, 20px)',
             border: '1px solid #e0e0e0',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '28px', marginBottom: '8px' }}>✅</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
+            <div style={{ fontSize: 'clamp(20px, 4vw, 28px)', marginBottom: '8px' }}>✅</div>
+            <div style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
               {stats.presentDays}
             </div>
-            <div style={{ fontSize: '13px', color: '#666' }}>أيام الحضور</div>
+            <div style={{ fontSize: 'clamp(11px, 2vw, 13px)', color: '#666' }}>أيام الحضور</div>
           </div>
 
           <div style={{
             background: 'white',
             borderRadius: '12px',
-            padding: '20px',
+            padding: 'clamp(16px, 3vw, 20px)',
             border: '1px solid #e0e0e0',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '28px', marginBottom: '8px' }}>📅</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
+            <div style={{ fontSize: 'clamp(20px, 4vw, 28px)', marginBottom: '8px' }}>📅</div>
+            <div style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
               {stats.totalDays}
             </div>
-            <div style={{ fontSize: '13px', color: '#666' }}>إجمالي أيام الدوام</div>
+            <div style={{ fontSize: 'clamp(11px, 2vw, 13px)', color: '#666' }}>إجمالي أيام الدوام</div>
           </div>
 
           <div style={{
             background: 'white',
             borderRadius: '12px',
-            padding: '20px',
+            padding: 'clamp(16px, 3vw, 20px)',
             border: '1px solid #e0e0e0',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '28px', marginBottom: '8px' }}>📊</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
+            <div style={{ fontSize: 'clamp(20px, 4vw, 28px)', marginBottom: '8px' }}>📊</div>
+            <div style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
               {stats.attendanceRate}%
             </div>
-            <div style={{ fontSize: '13px', color: '#666' }}>نسبة الحضور</div>
+            <div style={{ fontSize: 'clamp(11px, 2vw, 13px)', color: '#666' }}>نسبة الحضور</div>
           </div>
 
           <div style={{
             background: 'white',
             borderRadius: '12px',
-            padding: '20px',
+            padding: 'clamp(16px, 3vw, 20px)',
             border: '1px solid #e0e0e0',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '28px', marginBottom: '8px' }}>📆</div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
+            <div style={{ fontSize: 'clamp(20px, 4vw, 28px)', marginBottom: '8px' }}>📆</div>
+            <div style={{ fontSize: 'clamp(14px, 3vw, 18px)', fontWeight: 'bold', marginBottom: '4px', color: '#333' }}>
               {stats.period || '-'}
             </div>
-            <div style={{ fontSize: '13px', color: '#666' }}>الفترة المحددة</div>
+            <div style={{ fontSize: 'clamp(11px, 2vw, 13px)', color: '#666' }}>الفترة المحددة</div>
           </div>
         </div>
 
@@ -451,14 +452,14 @@ export default function DashboardPage() {
         <div style={{
           background: 'white',
           borderRadius: '8px',
-          padding: '24px',
-          marginBottom: '32px',
+          padding: 'clamp(16px, 3vw, 24px)',
+          marginBottom: 'clamp(20px, 4vw, 32px)',
           border: '1px solid #e0e0e0'
         }}>
           <h2 style={{
-            fontSize: '20px',
+            fontSize: 'clamp(18px, 4vw, 20px)',
             fontWeight: '600',
-            marginBottom: '20px',
+            marginBottom: 'clamp(16px, 3vw, 20px)',
             color: '#333'
           }}>
             تفاصيل الدوام
@@ -467,28 +468,59 @@ export default function DashboardPage() {
           {attendanceDetails.length === 0 ? (
             <div style={{
               textAlign: 'center',
-              padding: '40px',
+              padding: 'clamp(30px, 6vw, 40px)',
               color: '#666'
             }}>
-              <p>لا توجد سجلات دوام في الفترة المحددة</p>
+              <p style={{ fontSize: 'clamp(14px, 3vw, 16px)' }}>لا توجد سجلات دوام في الفترة المحددة</p>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div className="table-responsive" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               <table style={{
                 width: '100%',
-                borderCollapse: 'collapse'
+                borderCollapse: 'collapse',
+                minWidth: '600px'
               }}>
                 <thead>
                   <tr style={{
                     background: '#f8f9fa',
                     borderBottom: '2px solid #ddd'
                   }}>
-                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>التاريخ</th>
-                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>الرقم الوظيفي</th>
-                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>الاسم</th>
-                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>الفرع</th>
-                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>القسم</th>
-                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>الحالة</th>
+                    <th style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)', 
+                      textAlign: 'right', 
+                      fontWeight: '600',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>التاريخ</th>
+                    <th style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)', 
+                      textAlign: 'right', 
+                      fontWeight: '600',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>الرقم الوظيفي</th>
+                    <th style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)', 
+                      textAlign: 'right', 
+                      fontWeight: '600',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>الاسم</th>
+                    <th style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)', 
+                      textAlign: 'right', 
+                      fontWeight: '600',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>الفرع</th>
+                    <th style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)', 
+                      textAlign: 'right', 
+                      fontWeight: '600',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>القسم</th>
+                    <th style={{ 
+                      padding: 'clamp(8px, 1.5vw, 12px)', 
+                      textAlign: 'right', 
+                      fontWeight: '600',
+                      fontSize: 'clamp(12px, 2.5vw, 14px)'
+                    }}>الحالة</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -496,17 +528,36 @@ export default function DashboardPage() {
                     <tr key={detail.id} style={{
                       borderBottom: '1px solid #eee'
                     }}>
-                      <td style={{ padding: '12px' }}>{formatDate(detail.date)}</td>
-                      <td style={{ padding: '12px' }}>{detail.employee.employeeNumber}</td>
-                      <td style={{ padding: '12px' }}>{detail.employee.name}</td>
-                      <td style={{ padding: '12px' }}>{detail.employee.branch || '-'}</td>
-                      <td style={{ padding: '12px' }}>{detail.employee.department || '-'}</td>
-                      <td style={{ padding: '12px' }}>
+                      <td style={{ 
+                        padding: 'clamp(8px, 1.5vw, 12px)',
+                        fontSize: 'clamp(12px, 2.5vw, 14px)'
+                      }}>{formatDate(detail.date)}</td>
+                      <td style={{ 
+                        padding: 'clamp(8px, 1.5vw, 12px)',
+                        fontSize: 'clamp(12px, 2.5vw, 14px)'
+                      }}>{detail.employee.employeeNumber}</td>
+                      <td style={{ 
+                        padding: 'clamp(8px, 1.5vw, 12px)',
+                        fontSize: 'clamp(12px, 2.5vw, 14px)'
+                      }}>{detail.employee.name}</td>
+                      <td style={{ 
+                        padding: 'clamp(8px, 1.5vw, 12px)',
+                        fontSize: 'clamp(12px, 2.5vw, 14px)'
+                      }}>{detail.employee.branch || '-'}</td>
+                      <td style={{ 
+                        padding: 'clamp(8px, 1.5vw, 12px)',
+                        fontSize: 'clamp(12px, 2.5vw, 14px)'
+                      }}>{detail.employee.department || '-'}</td>
+                      <td style={{ 
+                        padding: 'clamp(8px, 1.5vw, 12px)',
+                        fontSize: 'clamp(12px, 2.5vw, 14px)'
+                      }}>
                         <span style={{
                           padding: '4px 12px',
                           borderRadius: '12px',
-                          fontSize: '12px',
+                          fontSize: 'clamp(10px, 2vw, 12px)',
                           fontWeight: '600',
+                          whiteSpace: 'nowrap',
                           ...getStatusBadgeStyle(detail.status)
                         }}>
                           {getStatusLabel(detail.status)}
@@ -524,21 +575,21 @@ export default function DashboardPage() {
         <div style={{
           background: '#f8f9fa',
           borderRadius: '8px',
-          padding: '24px',
-          marginTop: '32px'
+          padding: 'clamp(16px, 3vw, 24px)',
+          marginTop: 'clamp(20px, 4vw, 32px)'
         }}>
           <h2 style={{ 
-            fontSize: '20px', 
+            fontSize: 'clamp(18px, 4vw, 20px)', 
             fontWeight: '600', 
-            marginBottom: '16px',
+            marginBottom: 'clamp(12px, 2vw, 16px)',
             color: '#333'
           }}>
             إجراءات سريعة
           </h2>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '12px'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
+            gap: 'clamp(10px, 2vw, 12px)'
           }}>
             <QuickActionCard href="/employees" icon="👥" label="إدارة الموظفين" />
             <QuickActionCard href="/attendance" icon="📅" label="تسجيل الدوام" />
@@ -549,15 +600,22 @@ export default function DashboardPage() {
       </div>
       <style dangerouslySetInnerHTML={{
         __html: `
-          @media (min-width: 1200px) {
+          @media (min-width: 1536px) {
             .dashboard-main-container {
-              max-width: 1400px;
+              max-width: 1920px;
               margin: 0 auto;
             }
           }
           @media (max-width: 768px) {
             .dashboard-main-container {
-              padding: 20px !important;
+              padding: 16px !important;
+            }
+            .table-responsive table {
+              font-size: 12px;
+            }
+            .table-responsive th,
+            .table-responsive td {
+              padding: 8px 4px !important;
             }
           }
         `
