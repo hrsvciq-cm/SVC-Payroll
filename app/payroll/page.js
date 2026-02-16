@@ -602,6 +602,25 @@ export default function PayrollPage() {
             >
               حساب الرواتب
             </button>
+            {payroll.length > 0 && (
+              <button
+                onClick={() => {
+                  window.open(`/payroll/print-all?month=${selectedMonth}`, '_blank')
+                }}
+                style={{
+                  padding: '10px 20px',
+                  background: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}
+              >
+                طباعة كافة القسائم
+              </button>
+            )}
           </div>
         </div>
 
