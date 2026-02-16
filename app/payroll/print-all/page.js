@@ -1,11 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Payslip from '@/app/components/Payslip'
 
-export default function PrintAllPayslipsPage() {
+// Force dynamic rendering to prevent prerendering errors
+export const dynamic = 'force-dynamic'
+
+function PrintAllPayslipsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const month = searchParams.get('month') || new Date().toISOString().slice(0, 7)
@@ -317,6 +320,24 @@ export default function PrintAllPayslipsPage() {
         ))}
       </div>
     </>
+  )
+}
+
+export default function PrintAllPayslipsPage() {
+  return (
+    <Suspense fallback={
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '18px'
+      }}>
+        جاري تحميل البيانات...
+      </div>
+    }>
+      <PrintAllPayslipsContent />
+    </Suspense>
   )
 }
 
