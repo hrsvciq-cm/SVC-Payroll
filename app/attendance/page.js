@@ -299,114 +299,60 @@ export default function AttendancePage() {
         absentType = 'without_notice'
       }
       
-      let successCount = 0
-      let skipCount = 0
-      let failedCount = 0
-      const current = new Date(start)
+      // Use batch endpoint for faster processing
+      const batchRequestBody = {
+        employeeId: parseInt(multiDayEmployeeId),
+        startDate: multiDayStartDate,
+        endDate: multiDayEndDate,
+        status: status,
+        excludeWeekends: excludeWeekends
+      }
+      
+      if (absentType !== null) {
+        batchRequestBody.absentType = absentType
+      }
+      
+      const response = await fetch('/api/attendance/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(batchRequestBody)
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        const successCount = result.successCount || 0
+        const skipCount = result.skipCount || 0
+        const failedCount = result.failedCount || 0
 
-      while (current <= end) {
-        const dayOfWeek = current.getDay()
-        const dateStr = current.toISOString().split('T')[0]
+        // Clear form
+        setMultiDayEmployeeId('')
+        setMultiDayStartDate('')
+        setMultiDayEndDate('')
+        setMultiDayStatus('present')
+        setExcludeWeekends(false)
+        setShowMultiDayModal(false)
 
-        // Skip weekends if option is checked
-        if (excludeWeekends && (dayOfWeek === 5 || dayOfWeek === 6)) {
-          skipCount++
-        } else {
-          try {
-            // Check if attendance already exists first
-            const checkResponse = await fetch(`/api/attendance?employeeId=${multiDayEmployeeId}&date=${dateStr}`)
-            let existingId = null
-            
-            if (checkResponse.ok) {
-              const checkData = await checkResponse.json()
-              if (checkData.data && checkData.data.length > 0) {
-                existingId = checkData.data[0].id
-              }
-            }
-            
-            // Build request body - only include absentType if it's not null
-            const requestBody = {
-              status: status
-            }
-            if (absentType !== null) {
-              requestBody.absentType = absentType
-            }
-            
-            if (existingId) {
-              // Update existing attendance
-              const updateResponse = await fetch(`/api/attendance/${existingId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
-              })
-              if (updateResponse.ok) {
-                successCount++
-              } else {
-                const errorData = await updateResponse.json().catch(() => ({}))
-                console.error(`Error updating attendance for ${dateStr}:`, errorData.error || 'Unknown error')
-                failedCount++
-              }
-            } else {
-              // Create new attendance
-              const createBody = {
-                employeeId: parseInt(multiDayEmployeeId),
-                date: dateStr,
-                ...requestBody
-              }
-              
-              const response = await fetch('/api/attendance', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(createBody)
-              })
-              
-              if (response.ok) {
-                successCount++
-              } else {
-                const errorData = await response.json().catch(() => ({}))
-                console.error(`Error creating attendance for ${dateStr}:`, errorData.error || 'Unknown error')
-                failedCount++
-              }
-            }
-          } catch (error) {
-            console.error(`Error marking attendance for ${dateStr}:`, error)
-            failedCount++
+        let message = `تم تسجيل ${successCount} يوم بنجاح`
+        if (skipCount > 0) {
+          message += ` (تم تخطي ${skipCount} يوم - عطلة نهاية الأسبوع)`
+        }
+        if (failedCount > 0) {
+          message += ` (تعذر تسجيل ${failedCount} يوم - تحقق من تاريخ التعيين أو الإيقاف/إنهاء الخدمة)`
+        }
+        alert(message)
+
+        // Reload attendance if current date is in range
+        const today = new Date().toISOString().split('T')[0]
+        if (today >= multiDayStartDate && today <= multiDayEndDate) {
+          const attResponse = await fetch(`/api/attendance?date=${selectedDate}`)
+          if (attResponse.ok) {
+            const attResult = await attResponse.json()
+            setAttendance(attResult.data || [])
           }
         }
-
-        current.setDate(current.getDate() + 1)
-        
-        // Add a small delay to prevent overwhelming the server
-        if (current <= end) {
-          await new Promise(resolve => setTimeout(resolve, 50))
-        }
-      }
-
-      // Clear form
-      setMultiDayEmployeeId('')
-      setMultiDayStartDate('')
-      setMultiDayEndDate('')
-      setMultiDayStatus('present')
-      setExcludeWeekends(false)
-      setShowMultiDayModal(false)
-
-      let message = `تم تسجيل ${successCount} يوم بنجاح`
-      if (skipCount > 0) {
-        message += ` (تم تخطي ${skipCount} يوم - عطلة نهاية الأسبوع)`
-      }
-      if (failedCount > 0) {
-        message += ` (تعذر تسجيل ${failedCount} يوم - تحقق من تاريخ التعيين أو الإيقاف/إنهاء الخدمة)`
-      }
-      alert(message)
-
-      // Reload attendance if current date is in range
-      const today = new Date().toISOString().split('T')[0]
-      if (today >= multiDayStartDate && today <= multiDayEndDate) {
-        const attResponse = await fetch(`/api/attendance?date=${selectedDate}`)
-        if (attResponse.ok) {
-          const attResult = await attResponse.json()
-          setAttendance(attResult.data || [])
-        }
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        alert(errorData.error || 'حدث خطأ في تسجيل الدوام')
       }
     } catch (error) {
       console.error('Error marking multiple days:', error)
