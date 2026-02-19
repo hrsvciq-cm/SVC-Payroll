@@ -92,6 +92,7 @@ export async function POST(request) {
     
     // Validate required fields
     if (!data.employeeId || !data.date) {
+      console.error('Missing required fields:', { employeeId: data.employeeId, date: data.date })
       return NextResponse.json({ error: 'البيانات المطلوبة غير مكتملة' }, { status: 400 })
     }
     
@@ -149,6 +150,7 @@ export async function POST(request) {
     })
     
     if (existing) {
+      console.log(`Attendance already exists for employee ${data.employeeId} on date ${data.date}`)
       return NextResponse.json({ error: 'تم تسجيل الدوام لهذا الموظف في هذا التاريخ مسبقاً' }, { status: 400 })
     }
     

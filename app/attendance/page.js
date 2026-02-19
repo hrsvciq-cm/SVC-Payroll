@@ -193,19 +193,65 @@ export default function AttendancePage() {
       let successCount = 0
       for (const emp of deptEmployees) {
         try {
-          const response = await fetch('/api/attendance', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          // Check if attendance already exists first
+          const checkResponse = await fetch(`/api/attendance?employeeId=${emp.id}&date=${selectedDate}`)
+          let existingId = null
+          
+          if (checkResponse.ok) {
+            const checkData = await checkResponse.json()
+            if (checkData.data && checkData.data.length > 0) {
+              existingId = checkData.data[0].id
+            }
+          }
+          
+          // Build request body - only include absentType if it's not null
+          const requestBody = {
+            status: status
+          }
+          if (absentType !== null) {
+            requestBody.absentType = absentType
+          }
+          
+          if (existingId) {
+            // Update existing attendance
+            const updateResponse = await fetch(`/api/attendance/${existingId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(requestBody)
+            })
+            if (updateResponse.ok) {
+              successCount++
+            } else {
+              const errorData = await updateResponse.json().catch(() => ({}))
+              console.error(`Error updating attendance for employee ${emp.id}:`, errorData.error || 'Unknown error')
+            }
+          } else {
+            // Create new attendance
+            const createBody = {
               employeeId: emp.id,
               date: selectedDate,
-              status: status,
-              absentType: absentType
+              ...requestBody
+            }
+            
+            const response = await fetch('/api/attendance', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(createBody)
             })
-          })
-          if (response.ok) successCount++
+            if (response.ok) {
+              successCount++
+            } else {
+              const errorData = await response.json().catch(() => ({}))
+              console.error(`Error creating attendance for employee ${emp.id}:`, errorData.error || 'Unknown error')
+            }
+          }
         } catch (error) {
           console.error(`Error marking attendance for employee ${emp.id}:`, error)
+        }
+        
+        // Add a small delay to prevent overwhelming the server
+        if (emp !== deptEmployees[deptEmployees.length - 1]) {
+          await new Promise(resolve => setTimeout(resolve, 50))
         }
       }
 
@@ -267,61 +313,58 @@ export default function AttendancePage() {
           skipCount++
         } else {
           try {
-            const response = await fetch('/api/attendance', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+            // Check if attendance already exists first
+            const checkResponse = await fetch(`/api/attendance?employeeId=${multiDayEmployeeId}&date=${dateStr}`)
+            let existingId = null
+            
+            if (checkResponse.ok) {
+              const checkData = await checkResponse.json()
+              if (checkData.data && checkData.data.length > 0) {
+                existingId = checkData.data[0].id
+              }
+            }
+            
+            // Build request body - only include absentType if it's not null
+            const requestBody = {
+              status: status
+            }
+            if (absentType !== null) {
+              requestBody.absentType = absentType
+            }
+            
+            if (existingId) {
+              // Update existing attendance
+              const updateResponse = await fetch(`/api/attendance/${existingId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+              })
+              if (updateResponse.ok) {
+                successCount++
+              } else {
+                const errorData = await updateResponse.json().catch(() => ({}))
+                console.error(`Error updating attendance for ${dateStr}:`, errorData.error || 'Unknown error')
+                failedCount++
+              }
+            } else {
+              // Create new attendance
+              const createBody = {
                 employeeId: parseInt(multiDayEmployeeId),
                 date: dateStr,
-                status: status,
-                absentType: absentType
+                ...requestBody
+              }
+              
+              const response = await fetch('/api/attendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(createBody)
               })
-            })
-            
-            if (response.ok) {
-              successCount++
-            } else {
-              const errorData = await response.json().catch(() => ({}))
-              // If attendance already exists, try to update it instead
-              if (response.status === 400 && errorData.error?.includes('مسبقاً')) {
-                try {
-                  // Get existing attendance ID first
-                  const getResponse = await fetch(`/api/attendance?employeeId=${multiDayEmployeeId}&date=${dateStr}`)
-                  if (getResponse.ok) {
-                    const getData = await getResponse.json()
-                    if (getData.data && getData.data.length > 0) {
-                      const existingId = getData.data[0].id
-                      // Handle status format
-                      let status = multiDayStatus
-                      let absentType = null
-                      if (multiDayStatus === 'absent_with_notice') {
-                        status = 'absent'
-                        absentType = 'with_notice'
-                      } else if (multiDayStatus === 'absent_without_notice') {
-                        status = 'absent'
-                        absentType = 'without_notice'
-                      }
-                      const updateResponse = await fetch(`/api/attendance/${existingId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: status, absentType: absentType })
-                      })
-                      if (updateResponse.ok) {
-                        successCount++
-                      } else {
-                        failedCount++
-                      }
-                    } else {
-                      failedCount++
-                    }
-                  } else {
-                    failedCount++
-                  }
-                } catch (updateError) {
-                  console.error(`Error updating attendance for ${dateStr}:`, updateError)
-                  failedCount++
-                }
+              
+              if (response.ok) {
+                successCount++
               } else {
+                const errorData = await response.json().catch(() => ({}))
+                console.error(`Error creating attendance for ${dateStr}:`, errorData.error || 'Unknown error')
                 failedCount++
               }
             }
@@ -332,6 +375,11 @@ export default function AttendancePage() {
         }
 
         current.setDate(current.getDate() + 1)
+        
+        // Add a small delay to prevent overwhelming the server
+        if (current <= end) {
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
       }
 
       // Clear form
@@ -391,19 +439,66 @@ export default function AttendancePage() {
       let successCount = 0
       for (const empId of selectedEmployees) {
         try {
-          const response = await fetch('/api/attendance', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          // Check if attendance already exists first
+          const checkResponse = await fetch(`/api/attendance?employeeId=${empId}&date=${selectedDate}`)
+          let existingId = null
+          
+          if (checkResponse.ok) {
+            const checkData = await checkResponse.json()
+            if (checkData.data && checkData.data.length > 0) {
+              existingId = checkData.data[0].id
+            }
+          }
+          
+          // Build request body - only include absentType if it's not null
+          const requestBody = {
+            status: status
+          }
+          if (absentType !== null) {
+            requestBody.absentType = absentType
+          }
+          
+          if (existingId) {
+            // Update existing attendance
+            const updateResponse = await fetch(`/api/attendance/${existingId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(requestBody)
+            })
+            if (updateResponse.ok) {
+              successCount++
+            } else {
+              const errorData = await updateResponse.json().catch(() => ({}))
+              console.error(`Error updating attendance for employee ${empId}:`, errorData.error || 'Unknown error')
+            }
+          } else {
+            // Create new attendance
+            const createBody = {
               employeeId: parseInt(empId),
               date: selectedDate,
-              status: status,
-              absentType: absentType
+              ...requestBody
+            }
+            
+            const response = await fetch('/api/attendance', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(createBody)
             })
-          })
-          if (response.ok) successCount++
+            if (response.ok) {
+              successCount++
+            } else {
+              const errorData = await response.json().catch(() => ({}))
+              console.error(`Error creating attendance for employee ${empId}:`, errorData.error || 'Unknown error')
+            }
+          }
         } catch (error) {
           console.error(`Error marking attendance for employee ${empId}:`, error)
+        }
+        
+        // Add a small delay to prevent overwhelming the server
+        const empArray = Array.from(selectedEmployees)
+        if (empId !== empArray[empArray.length - 1]) {
+          await new Promise(resolve => setTimeout(resolve, 50))
         }
       }
 
@@ -435,11 +530,11 @@ export default function AttendancePage() {
   const updateAttendanceStatus = async (attendanceId, newStatus, absentType = null) => {
     try {
       const updateData = { status: newStatus }
+      // Only include absentType if status is 'absent'
       if (newStatus === 'absent') {
         updateData.absentType = absentType || 'with_notice'
-      } else {
-        updateData.absentType = null
       }
+      // Don't include absentType for other statuses
       
       const response = await fetch(`/api/attendance/${attendanceId}`, {
         method: 'PUT',
