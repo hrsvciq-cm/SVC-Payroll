@@ -45,15 +45,9 @@ export default function EmployeesPage() {
   })
 
   useEffect(() => {
+    // Load data immediately - Layout handles auth
+    // تحميل البيانات فوراً - Layout يتعامل مع المصادقة
     async function loadData() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/login')
-        return
-      }
-      
       try {
         const response = await fetch('/api/employees?includeTerminated=true')
         if (response.ok) {
@@ -62,13 +56,13 @@ export default function EmployeesPage() {
         }
       } catch (error) {
         console.error('Error loading employees:', error)
+      } finally {
+        setLoading(false)
       }
-      
-      setLoading(false)
     }
     
     loadData()
-  }, [router])
+  }, [])
 
   const handleOpenModal = () => {
     const today = new Date().toISOString().split('T')[0]

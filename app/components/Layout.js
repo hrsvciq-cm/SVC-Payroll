@@ -13,7 +13,6 @@ export default function Layout({ children }) {
   const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const lastActivityRef = useRef(Date.now())
   const timeoutIdRef = useRef(null)
@@ -38,83 +37,117 @@ export default function Layout({ children }) {
   }, [handleSessionExpired])
 
   useEffect(() => {
-    async function getUser() {
-      // Don't check session on login page
-      if (pathname === '/login') {
-        setLoading(false)
-        return
-      }
+    // Don't check session on login page
+    if (pathname === '/login') {
+      return
+    }
 
+    // Non-blocking: Show page immediately, check auth in background
+    // غير محظور: عرض الصفحة فوراً، التحقق من المصادقة في الخلفية
+
+    async function getUser() {
       try {
         const supabase = createClient()
         
-        // Use getSession first as it's more reliable for fresh logins
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        // Add timeout to prevent hanging
+        // إضافة timeout لمنع التعليق
+        const authPromise = supabase.auth.getSession()
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Auth timeout')), 5000)
+        )
+        
+        let sessionResult
+        try {
+          sessionResult = await Promise.race([authPromise, timeoutPromise])
+        } catch (error) {
+          // Timeout or error - silently fail, middleware will handle auth
+          // انتهت المهلة أو خطأ - فشل صامت، middleware سيتعامل مع المصادقة
+          return
+        }
+        
+        const { data: { session }, error: sessionError } = sessionResult || { data: { session: null }, error: { message: 'No result' } }
         
         if (sessionError || !session || !session.user) {
-          // Try getUser as fallback
-          const { data: { user }, error: userError } = await supabase.auth.getUser()
-          if (userError || !user) {
-            router.push('/login?expired=true')
-            return
-          }
-          setUser(user)
-        } else {
-          setUser(session.user)
-        }
-
-        setLoading(false)
-      } catch (error) {
-        // Silently handle auth errors - redirect to login
-        setLoading(false)
-        router.push('/login?expired=true')
-      }
-
-      // Initialize idle timeout
-      lastActivityRef.current = Date.now()
-      resetIdleTimeout()
-
-      // Setup activity listeners to reset idle timeout
-      const handleActivity = () => {
-        lastActivityRef.current = Date.now()
-        resetIdleTimeout()
-      }
-
-      const listeners = []
-      ACTIVITY_EVENTS.forEach(activity => {
-        window.addEventListener(activity, handleActivity, { passive: true })
-        listeners.push({ activity, handler: handleActivity })
-      })
-
-      // Check session and idle timeout periodically
-      checkIntervalRef.current = setInterval(async () => {
-        // Check if session is still valid
-        const supabase = createClient()
-        const { data: { session: currentSession } } = await supabase.auth.getSession()
-        
-        if (!currentSession) {
-          await handleSessionExpired()
+          // Silently fail - middleware will handle auth
+          // الفشل الصامت - middleware سيتعامل مع المصادقة
           return
         }
 
-        // Check idle timeout
-        const idleTime = Date.now() - lastActivityRef.current
-        if (idleTime >= IDLE_TIMEOUT) {
-          await handleSessionExpired()
-        }
-      }, CHECK_INTERVAL)
+        setUser(session.user)
 
-      // Cleanup function
-      return () => {
-        if (timeoutIdRef.current) {
-          clearTimeout(timeoutIdRef.current)
+        // Initialize idle timeout
+        lastActivityRef.current = Date.now()
+        resetIdleTimeout()
+
+        // Setup activity listeners to reset idle timeout
+        const handleActivity = () => {
+          lastActivityRef.current = Date.now()
+          resetIdleTimeout()
         }
-        if (checkIntervalRef.current) {
-          clearInterval(checkIntervalRef.current)
-        }
-        listeners.forEach(({ activity, handler }) => {
-          window.removeEventListener(activity, handler)
+
+        const listeners = []
+        ACTIVITY_EVENTS.forEach(activity => {
+          window.addEventListener(activity, handleActivity, { passive: true })
+          listeners.push({ activity, handler: handleActivity })
         })
+
+        // Check session and idle timeout periodically
+        checkIntervalRef.current = setInterval(async () => {
+          try {
+            // Check idle timeout first (no network call needed)
+            // التحقق من انتهاء المهلة أولاً (لا حاجة لطلب الشبكة)
+            const idleTime = Date.now() - lastActivityRef.current
+            if (idleTime >= IDLE_TIMEOUT) {
+              await handleSessionExpired()
+              return
+            }
+
+            // Check if session is still valid (with timeout)
+            // التحقق من أن الجلسة لا تزال صالحة (مع timeout)
+            const supabase = createClient()
+            const sessionPromise = supabase.auth.getSession()
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout')), 3000)
+            )
+            
+            let sessionResult
+            try {
+              sessionResult = await Promise.race([sessionPromise, timeoutPromise])
+            } catch (error) {
+              // Timeout or error - silently skip this check
+              // انتهت المهلة أو خطأ - تخطي هذا الفحص بصمت
+              return
+            }
+            
+            const { data: { session: currentSession } } = sessionResult || { data: { session: null } }
+            
+            if (!currentSession) {
+              await handleSessionExpired()
+              return
+            }
+          } catch (error) {
+            // Silently handle errors in interval check
+            // معالجة الأخطاء بصمت في فحص الفترة
+            console.warn('Session check error:', error)
+          }
+        }, CHECK_INTERVAL)
+
+        // Cleanup function
+        return () => {
+          if (timeoutIdRef.current) {
+            clearTimeout(timeoutIdRef.current)
+          }
+          if (checkIntervalRef.current) {
+            clearInterval(checkIntervalRef.current)
+          }
+          listeners.forEach(({ activity, handler }) => {
+            window.removeEventListener(activity, handler)
+          })
+        }
+      } catch (error) {
+        // Silently handle auth errors - don't block page load
+        // معالجة أخطاء المصادقة بصمت - لا تمنع تحميل الصفحة
+        console.warn('Auth check failed:', error)
       }
     }
 
@@ -142,18 +175,10 @@ export default function Layout({ children }) {
     { path: '/reports', label: 'التقارير', icon: '📈' },
   ], [])
 
-  if (loading) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh' 
-      }}>
-        <p>جاري التحميل...</p>
-      </div>
-    )
-  }
+  // Don't block page rendering - show content immediately
+  // لا تمنع عرض الصفحة - عرض المحتوى فوراً
+  // Auth check happens in background and won't block UI
+  // فحص المصادقة يحدث في الخلفية ولن يمنع واجهة المستخدم
 
   return (
     <div style={{ 

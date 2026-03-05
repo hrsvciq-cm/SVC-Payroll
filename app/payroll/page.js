@@ -28,20 +28,10 @@ export default function PayrollPage() {
   })
 
   useEffect(() => {
-    async function loadData() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/login')
-        return
-      }
-      
-      setLoading(false)
-    }
-    
-    loadData()
-  }, [router])
+    // Layout handles auth - just set loading to false
+    // Layout يتعامل مع المصادقة - فقط تعطيل حالة التحميل
+    setLoading(false)
+  }, [])
 
   useEffect(() => {
     if (selectedMonth) {

@@ -8,7 +8,6 @@ import QuickActionCard from '@/app/components/QuickActionCard'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     totalEmployees: 0,
@@ -32,26 +31,13 @@ export default function DashboardPage() {
   })
 
   useEffect(() => {
-    async function loadData() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/login')
-        return
-      }
-      
-      setUser(user)
-      await loadDashboardData()
-    }
-    
-    loadData()
-  }, [router])
+    // Load data immediately - Layout handles auth
+    // تحميل البيانات فوراً - Layout يتعامل مع المصادقة
+    loadDashboardData()
+  }, [])
 
   useEffect(() => {
-    if (user) {
-      loadDashboardData()
-    }
+    loadDashboardData()
   }, [filters])
 
   const loadDashboardData = async () => {

@@ -34,15 +34,9 @@ export default function AttendancePage() {
   const [showMultiDayModal, setShowMultiDayModal] = useState(false)
 
   useEffect(() => {
+    // Load data immediately - Layout handles auth
+    // تحميل البيانات فوراً - Layout يتعامل مع المصادقة
     async function loadData() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/login')
-        return
-      }
-      
       try {
         // Load employees
         const empResponse = await fetch('/api/employees?includeTerminated=false')
@@ -57,13 +51,13 @@ export default function AttendancePage() {
         }
       } catch (error) {
         console.error('Error loading data:', error)
+      } finally {
+        setLoading(false)
       }
-      
-      setLoading(false)
     }
     
     loadData()
-  }, [router])
+  }, [])
 
   useEffect(() => {
     async function loadAttendance() {
