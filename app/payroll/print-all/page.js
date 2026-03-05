@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Payslip from '@/app/components/Payslip'
@@ -8,97 +8,203 @@ import Payslip from '@/app/components/Payslip'
 // Force dynamic rendering to prevent prerendering errors
 export const dynamic = 'force-dynamic'
 
+// Helper function to fetch with timeout and retry
+async function fetchWithRetry(url, options = {}, maxRetries = 3, timeout = 30000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
+      
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      })
+      
+      clearTimeout(timeoutId)
+      
+      if (response.ok) {
+        return response
+      }
+      
+      // If it's the last attempt or a non-retryable error, throw
+      if (attempt === maxRetries || response.status === 401 || response.status === 403) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      // Wait before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error
+      }
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+    }
+  }
+}
+
 function PrintAllPayslipsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const month = searchParams.get('month') || new Date().toISOString().slice(0, 7)
   
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [payrollData, setPayrollData] = useState([])
   const [deductionsMap, setDeductionsMap] = useState({})
 
-  useEffect(() => {
-    async function loadData() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Check authentication first with error handling
+      let user = null
+      try {
+        const supabase = createClient()
+        const authResult = await supabase.auth.getUser()
+        user = authResult.data?.user
+        if (authResult.error) {
+          console.warn('Auth error (non-critical):', authResult.error.message)
+        }
+      } catch (authErr) {
+        console.error('Error checking authentication:', authErr)
+        // If auth check fails, try to continue - API will handle auth
+      }
       
       if (!user) {
-        router.push('/login')
+        // Try to redirect, but don't block if router is not ready
+        try {
+          router.push('/login')
+        } catch (routerErr) {
+          console.warn('Router not ready:', routerErr)
+        }
         return
       }
 
-      try {
-        // Fetch all payroll records for the month
-        const payrollResponse = await fetch(`/api/payroll?month=${month}`)
-        if (payrollResponse.ok) {
-          const payrollResult = await payrollResponse.json()
-          const payrolls = payrollResult.data || []
-          
-          // Fetch all deductions for all employees in this month
-          const employeeIds = payrolls.map(p => p.employeeId)
-          if (employeeIds.length > 0) {
-            try {
-              const deductionsResponse = await fetch(`/api/deductions?month=${month}`)
-              if (deductionsResponse.ok) {
-                const deductionsResult = await deductionsResponse.json()
-                const deductions = deductionsResult.data || []
-                
-                // Group deductions by employeeId
-                const deductionsByEmployee = {}
-                deductions.forEach(ded => {
-                  if (!deductionsByEmployee[ded.employeeId]) {
-                    deductionsByEmployee[ded.employeeId] = []
-                  }
-                  deductionsByEmployee[ded.employeeId].push(ded)
-                })
-                
-                setDeductionsMap(deductionsByEmployee)
-              } else {
-                console.warn('Failed to fetch deductions:', deductionsResponse.status)
-              }
-            } catch (deductionsError) {
-              console.error('Error fetching deductions:', deductionsError)
-              // Continue without deductions - not critical
-            }
-          }
-          
-          setPayrollData(payrolls)
-        } else {
-          console.error('Failed to fetch payroll:', payrollResponse.status)
+      // Fetch payroll and deductions in parallel for better performance
+      const [payrollResponse, deductionsResponse] = await Promise.allSettled([
+        fetchWithRetry(`/api/payroll?month=${month}`),
+        fetchWithRetry(`/api/deductions?month=${month}`)
+      ])
+
+      // Process payroll data
+      let payrolls = []
+      if (payrollResponse.status === 'fulfilled') {
+        try {
+          const payrollResult = await payrollResponse.value.json()
+          payrolls = payrollResult.data || []
+        } catch (parseError) {
+          console.error('Error parsing payroll response:', parseError)
+          throw new Error('فشل في تحميل بيانات الرواتب')
         }
-      } catch (error) {
-        console.error('Error loading payroll data:', error)
-      } finally {
-        setLoading(false)
+      } else {
+        console.error('Failed to fetch payroll:', payrollResponse.reason)
+        throw new Error('فشل في تحميل بيانات الرواتب')
       }
+
+      // Process deductions data (non-critical, continue even if it fails)
+      const deductionsByEmployee = {}
+      if (deductionsResponse.status === 'fulfilled') {
+        try {
+          const deductionsResult = await deductionsResponse.value.json()
+          const deductions = deductionsResult.data || []
+          
+          // Group deductions by employeeId
+          deductions.forEach(ded => {
+            if (!deductionsByEmployee[ded.employeeId]) {
+              deductionsByEmployee[ded.employeeId] = []
+            }
+            deductionsByEmployee[ded.employeeId].push(ded)
+          })
+        } catch (parseError) {
+          console.warn('Error parsing deductions response:', parseError)
+          // Continue without deductions - not critical
+        }
+      } else {
+        console.warn('Failed to fetch deductions:', deductionsResponse.reason)
+        // Continue without deductions - not critical
+      }
+      
+      setPayrollData(payrolls)
+      setDeductionsMap(deductionsByEmployee)
+    } catch (error) {
+      console.error('Error loading payroll data:', error)
+      setError(error.message || 'حدث خطأ في تحميل البيانات')
+    } finally {
+      setLoading(false)
     }
-    
-    loadData()
   }, [month, router])
+  
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   useEffect(() => {
-    // Auto print when page loads
-    if (!loading && payrollData.length > 0) {
-      setTimeout(() => {
+    // Auto print when page loads and data is ready
+    if (!loading && !error && payrollData.length > 0) {
+      // Small delay to ensure DOM is fully rendered
+      const printTimer = setTimeout(() => {
         window.print()
-      }, 500)
+      }, 800)
+      
+      return () => clearTimeout(printTimer)
     }
-  }, [loading, payrollData])
+  }, [loading, error, payrollData])
 
+  // Loading state
   if (loading) {
     return (
       <div style={{
         display: 'flex',
+        flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
         height: '100vh',
-        fontSize: '18px'
+        fontSize: '18px',
+        gap: '10px'
       }}>
-        جاري تحميل البيانات...
+        <div>جاري تحميل البيانات...</div>
+        <div style={{ fontSize: '14px', color: '#666' }}>يرجى الانتظار</div>
       </div>
     )
   }
 
+  // Error state
+  if (error) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '18px',
+        gap: '15px',
+        padding: '20px',
+        textAlign: 'center'
+      }}>
+        <div style={{ color: '#dc3545', fontWeight: 'bold' }}>خطأ في تحميل البيانات</div>
+        <div style={{ fontSize: '14px', color: '#666' }}>{error}</div>
+        <button
+          onClick={loadData}
+          style={{
+            padding: '10px 20px',
+            fontSize: '14px',
+            backgroundColor: '#667eea',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          إعادة المحاولة
+        </button>
+      </div>
+    )
+  }
+
+  // Empty state
   if (payrollData.length === 0) {
     return (
       <div style={{
@@ -106,7 +212,8 @@ function PrintAllPayslipsContent() {
         justifyContent: 'center',
         alignItems: 'center',
         height: '100vh',
-        fontSize: '18px'
+        fontSize: '18px',
+        color: '#666'
       }}>
         لا توجد قسائم رواتب لهذا الشهر
       </div>
