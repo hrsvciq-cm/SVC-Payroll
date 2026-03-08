@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/app/components/Layout'
 import QuickActionCard from '@/app/components/QuickActionCard'
+import EmployeeSelect from '@/app/components/EmployeeSelect'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -30,12 +31,7 @@ export default function DashboardPage() {
     viewType: 'currentMonth'
   })
 
-  useEffect(() => {
-    // Load data immediately - Layout handles auth
-    // تحميل البيانات فوراً - Layout يتعامل مع المصادقة
-    loadDashboardData()
-  }, [])
-
+  // Single effect: load on mount and when filters change. Avoids double fetch on mount and keeps employee list stable.
   useEffect(() => {
     loadDashboardData()
   }, [filters])
@@ -53,7 +49,11 @@ export default function DashboardPage() {
         const data = await response.json()
         setStats(data)
         setAttendanceDetails(data.attendanceDetails || [])
-        setEmployees(data.employees || [])
+        // Update employee list only when NOT viewing a single employee, so the list never disappears when one is selected
+        if (!filters.employeeId) {
+          const nextEmployees = data.employees || []
+          if (nextEmployees.length > 0) setEmployees(nextEmployees)
+        }
       }
     } catch (error) {
       console.error('Error loading dashboard:', error)
@@ -105,7 +105,9 @@ export default function DashboardPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   }
 
-  if (loading && !stats.totalEmployees) {
+  // Full-page loading only on initial load (no data yet). Once we have employees, keep the list visible and never hide it.
+  const isInitialLoad = !stats.totalEmployees && !employees.length
+  if (loading && isInitialLoad) {
     return (
       <Layout>
         <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -187,36 +189,13 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '600',
-                color: '#333',
-                fontSize: '14px'
-              }}>
-                الموظف (اختياري):
-              </label>
-              <select
-                value={filters.employeeId}
-                onChange={(e) => handleFilterChange('employeeId', e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  background: 'white'
-                }}
-              >
-                <option value="">جميع الموظفين</option>
-                {employees.map(emp => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.employeeNumber} - {emp.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Employee list: separate component so it does not unmount; selecting an employee updates only the Detail View (stats + table) */}
+            <EmployeeSelect
+              id="dashboard-employee-select"
+              employees={employees}
+              value={filters.employeeId}
+              onChange={(v) => handleFilterChange('employeeId', v)}
+            />
 
             <div>
               <label style={{

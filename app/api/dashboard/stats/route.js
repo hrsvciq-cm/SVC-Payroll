@@ -155,23 +155,23 @@ export async function GET(request) {
       }
     }
     
-    // Parallel fetch all counts and employee list
-    // جلب جميع العدادات وقائمة الموظفين بشكل متوازي
+    // Parallel fetch all counts and employee list.
+    // Always fetch full employee list for the dropdown so the selection list never disappears when viewing one employee.
     const [totalEmployees, activeEmployees, suspendedEmployees, todayAttendance, employees] = await Promise.all([
       employeeId ? Promise.resolve(1) : prisma.employee.count({ where: employeeWhere }),
-      prisma.employee.count({ 
-        where: { ...employeeWhere, status: 'active' } 
+      prisma.employee.count({
+        where: { ...employeeWhere, status: 'active' }
       }),
-      prisma.employee.count({ 
-        where: { ...employeeWhere, status: 'suspended' } 
+      prisma.employee.count({
+        where: { ...employeeWhere, status: 'suspended' }
       }),
       prisma.attendance.count({
         where: {
           date: today
         }
       }),
-      // Only fetch employees list if not filtering by employeeId
-      employeeId ? Promise.resolve([]) : prisma.employee.findMany({
+      // Always return full employee list for dropdown (single-page experience: list stays visible when one employee is selected)
+      prisma.employee.findMany({
         where: {
           status: {
             not: 'terminated'

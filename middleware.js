@@ -9,6 +9,11 @@ import { NextResponse } from 'next/server'
  * - Allows valid sessions to persist
  */
 export async function middleware(request) {
+  // Chrome DevTools requests this URL; respond immediately to avoid 404 and not-found compilation
+  if (request.nextUrl.pathname === '/.well-known/appspecific/com.chrome.devtools.json') {
+    return new NextResponse(null, { status: 204 })
+  }
+
   // Validate environment variables
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
