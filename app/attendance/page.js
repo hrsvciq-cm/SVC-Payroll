@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/app/components/Layout'
@@ -33,48 +33,49 @@ export default function AttendancePage() {
   const [showSelectModal, setShowSelectModal] = useState(false)
   const [showMultiDayModal, setShowMultiDayModal] = useState(false)
 
+  // On mount: fetch employees and attendance in parallel for faster load.
+  // When selectedDate changes: only refetch attendance (employees already in state).
+  const employeesLoadedRef = useRef(false)
   useEffect(() => {
-    // Load data immediately - Layout handles auth
-    // تحميل البيانات فوراً - Layout يتعامل مع المصادقة
+    let cancelled = false
+    const date = selectedDate || new Date().toISOString().split('T')[0]
+    const needEmployees = !employeesLoadedRef.current
+
     async function loadData() {
       try {
-        // Load employees
-        const empResponse = await fetch('/api/employees?includeTerminated=false')
-        if (empResponse.ok) {
-          const empResult = await empResponse.json()
-          const activeEmps = (empResult.data || []).filter(emp => emp.status === 'active')
-          setEmployees(activeEmps)
-          
-          // Extract unique departments
-          const depts = [...new Set(activeEmps.map(emp => emp.department).filter(Boolean))]
-          setDepartments(depts)
+        if (needEmployees) {
+          const [empResponse, attResponse] = await Promise.all([
+            fetch('/api/employees?includeTerminated=false'),
+            fetch(`/api/attendance?date=${date}`)
+          ])
+          if (cancelled) return
+          if (empResponse.ok) {
+            const empResult = await empResponse.json()
+            const activeEmps = (empResult.data || []).filter(emp => emp.status === 'active')
+            setEmployees(activeEmps)
+            setDepartments([...new Set(activeEmps.map(emp => emp.department).filter(Boolean))])
+            employeesLoadedRef.current = true
+          }
+          if (attResponse.ok) {
+            const attResult = await attResponse.json()
+            setAttendance(attResult.data || [])
+          }
+        } else {
+          const attResponse = await fetch(`/api/attendance?date=${date}`)
+          if (cancelled) return
+          if (attResponse.ok) {
+            const attResult = await attResponse.json()
+            setAttendance(attResult.data || [])
+          }
         }
       } catch (error) {
-        console.error('Error loading data:', error)
+        if (!cancelled) console.error('Error loading data:', error)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
-    
     loadData()
-  }, [])
-
-  useEffect(() => {
-    async function loadAttendance() {
-      try {
-        const response = await fetch(`/api/attendance?date=${selectedDate}`)
-        if (response.ok) {
-          const result = await response.json()
-          setAttendance(result.data || [])
-        }
-      } catch (error) {
-        console.error('Error loading attendance:', error)
-      }
-    }
-    
-    if (selectedDate) {
-      loadAttendance()
-    }
+    return () => { cancelled = true }
   }, [selectedDate])
 
   // Update preview days count for multiple days

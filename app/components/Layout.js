@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -290,7 +291,7 @@ export default function Layout({ children }) {
             padding: '8px'
           }}>
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.path}
                 href={item.path}
                 onClick={() => setMobileMenuOpen(false)}
@@ -310,7 +311,7 @@ export default function Layout({ children }) {
               >
                 <span style={{ fontSize: '20px' }}>{item.icon}</span>
                 <span>{item.label}</span>
-              </a>
+              </Link>
             ))}
           </div>
         </nav>
@@ -331,9 +332,10 @@ export default function Layout({ children }) {
           flexWrap: 'wrap'
         }}>
           {navItems.map((item) => (
-            <a
+            <Link
               key={item.path}
               href={item.path}
+              prefetch={true}
               style={{
                 padding: '12px 20px',
                 textDecoration: 'none',
@@ -349,7 +351,7 @@ export default function Layout({ children }) {
             >
               <span>{item.icon}</span>
               <span>{item.label}</span>
-            </a>
+            </Link>
           ))}
         </div>
       </nav>
