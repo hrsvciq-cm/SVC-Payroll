@@ -20,7 +20,7 @@ const defaultStats = {
   period: ''
 }
 
-export default function DashboardClient({ initialData, initialFilters }) {
+export default function DashboardClient({ initialData, initialError, initialFilters }) {
   const [filters, setFilters] = useState(initialFilters || {
     month: '',
     employeeId: '',
@@ -46,6 +46,7 @@ export default function DashboardClient({ initialData, initialFilters }) {
   const loading = isLoading && !data
   const hasData = (stats.totalEmployees > 0 || stats.totalDays > 0) || employees.length > 0
   const showLoading = loading && !hasData
+  const connectionError = initialError || error
 
   const handleFilterChange = (name, value) => {
     setFilters(prev => ({ ...prev, [name]: value }))
@@ -80,7 +81,7 @@ export default function DashboardClient({ initialData, initialFilters }) {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   }
 
-  if (showLoading) {
+  if (showLoading && !connectionError) {
     return (
       <div style={{ textAlign: 'center', padding: '40px' }}>
         <p>جاري التحميل...</p>
@@ -90,6 +91,26 @@ export default function DashboardClient({ initialData, initialFilters }) {
 
   return (
     <>
+    {connectionError && (
+      <div style={{
+        marginBottom: '16px',
+        padding: '12px 16px',
+        background: '#fff3cd',
+        border: '1px solid #ffc107',
+        borderRadius: '8px',
+        color: '#856404',
+        fontSize: '14px'
+      }}>
+        لا يمكن الاتصال بقاعدة البيانات أو Supabase. تحقق من الاتصال بالإنترنت وإعدادات .env
+        <button
+          type="button"
+          onClick={() => mutate()}
+          style={{ marginRight: '12px', marginTop: '8px', padding: '6px 12px', background: '#856404', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+        >
+          إعادة المحاولة
+        </button>
+      </div>
+    )}
     <div className="dashboard-main-container" style={{
         width: '100%',
         maxWidth: '1920px',

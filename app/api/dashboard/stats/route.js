@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardStats } from '@/lib/dashboard-stats'
-import { logError, handleApiError } from '@/lib/error-handler'
+import { withTimeout, DB_TIMEOUT_MS, logConnectionError } from '@/lib/server-utils'
+import { handleApiError } from '@/lib/error-handler'
 
 export async function GET(request) {
   try {
@@ -17,14 +18,20 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url)
-    const data = await getDashboardStats({
-      month: searchParams.get('month'),
-      employeeId: searchParams.get('employeeId'),
-      viewType: searchParams.get('viewType') || 'currentMonth'
-    })
-    return NextResponse.json(data)
+    const data = await withTimeout(
+      getDashboardStats({
+        month: searchParams.get('month'),
+        employeeId: searchParams.get('employeeId'),
+        viewType: searchParams.get('viewType') || 'currentMonth'
+      }),
+      DB_TIMEOUT_MS,
+      'Dashboard stats'
+    )
+    const res = NextResponse.json(data)
+    res.headers.set('Cache-Control', 'private, s-maxage=15, stale-while-revalidate=30')
+    return res
   } catch (error) {
-    logError(error, 'Dashboard Stats API')
+    logConnectionError(error, 'Dashboard Stats API')
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

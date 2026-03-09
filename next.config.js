@@ -9,6 +9,10 @@ const nextConfig = {
     if (isServer) {
       config.externals.push('@prisma/client')
     }
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      { message: /Serializing big strings.*deserialization performance/ }
+    ]
     return config
   },
   env: {},

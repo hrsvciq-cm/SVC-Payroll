@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
+import { withTimeout, AUTH_TIMEOUT_MS, isConnectionError } from '@/lib/server-utils'
 
 /**
  * Security middleware for authentication and session management
@@ -69,8 +70,19 @@ export async function middleware(request) {
     }
   )
 
-  // Get current user - this validates the session with Supabase Auth server
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  // Get current user with timeout to avoid long hangs and noisy logs on connection failure
+  let user = null
+  let userError = null
+  try {
+    const result = await withTimeout(supabase.auth.getUser(), AUTH_TIMEOUT_MS, 'Auth')
+    user = result?.data?.user ?? null
+    userError = result?.error ?? null
+  } catch (err) {
+    userError = err
+    if (process.env.NODE_ENV === 'development' && isConnectionError(err)) {
+      console.warn('[Middleware] Auth: connection unavailable')
+    }
+  }
 
   // Handle login page
   if (request.nextUrl.pathname === '/login') {
