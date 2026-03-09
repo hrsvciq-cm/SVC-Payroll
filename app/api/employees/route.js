@@ -18,45 +18,58 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const includeTerminated = searchParams.get('includeTerminated') === 'true'
-    
+    const limitParam = searchParams.get('limit')
+    const offsetParam = searchParams.get('offset')
+    const limit = limitParam ? Math.min(parseInt(limitParam, 10) || 500, 1000) : undefined
+    const offset = offsetParam ? Math.max(0, parseInt(offsetParam, 10)) : undefined
+
     const where = {}
-    
     if (status) {
       where.status = status
     } else if (!includeTerminated) {
-      // Default: exclude terminated employees
-      where.status = {
-        not: 'terminated'
-      }
+      where.status = { not: 'terminated' }
     }
-    
-    // Optimize: Select only needed fields
-    // تحسين: اختيار الحقول المطلوبة فقط
+
+    const select = {
+      id: true,
+      employeeNumber: true,
+      name: true,
+      branch: true,
+      department: true,
+      position: true,
+      salary: true,
+      workHours: true,
+      hireDate: true,
+      status: true,
+      statusChangeDate: true,
+      suspensionType: true,
+      suspensionDate: true,
+      terminationDate: true,
+      createdAt: true,
+      updatedAt: true
+    }
+
+    const orderBy = [{ employeeNumber: 'asc' }]
+
+    if (limit !== undefined) {
+      const [employees, total] = await Promise.all([
+        prisma.employee.findMany({
+          where,
+          select,
+          orderBy,
+          take: limit,
+          skip: offset || 0
+        }),
+        prisma.employee.count({ where })
+      ])
+      return NextResponse.json({ data: employees, total, hasMore: (offset || 0) + employees.length < total })
+    }
+
     const employees = await prisma.employee.findMany({
       where,
-      select: {
-        id: true,
-        employeeNumber: true,
-        name: true,
-        branch: true,
-        department: true,
-        position: true,
-        salary: true,
-        workHours: true,
-        hireDate: true,
-        status: true,
-        statusChangeDate: true,
-        suspensionType: true,
-        suspensionDate: true,
-        terminationDate: true,
-        createdAt: true,
-        updatedAt: true
-      },
-      orderBy: [
-        { employeeNumber: 'asc' }
-      ]
+      select,
+      orderBy
     })
-    
     return NextResponse.json({ data: employees })
   } catch (error) {
     logError(error, 'Employees API - GET')

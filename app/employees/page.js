@@ -1,15 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
+import useSWR from 'swr'
 import Layout from '@/app/components/Layout'
 import { formatCurrency } from '@/lib/currency'
+import { fetcher } from '@/lib/fetcher'
 
 export default function EmployeesPage() {
-  const router = useRouter()
-  const [employees, setEmployees] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { data: employeesResponse, isLoading, mutate } = useSWR(
+    '/api/employees?includeTerminated=true',
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 15000 }
+  )
+  const employees = employeesResponse?.data || []
+
   const [searchTerm, setSearchTerm] = useState('')
   const [activeTab, setActiveTab] = useState('active') // 'active', 'suspended', 'terminated'
   const [showAddModal, setShowAddModal] = useState(false)
@@ -17,8 +21,7 @@ export default function EmployeesPage() {
   const [submitting, setSubmitting] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState(null)
   const [changingStatusEmployee, setChangingStatusEmployee] = useState(null)
-  
-  // Form state
+
   const [formData, setFormData] = useState({
     name: '',
     employeeNumber: '',
@@ -35,7 +38,6 @@ export default function EmployeesPage() {
     terminationDate: ''
   })
 
-  // Change status form state
   const [statusFormData, setStatusFormData] = useState({
     status: 'active',
     statusChangeDate: new Date().toISOString().split('T')[0],
@@ -43,26 +45,6 @@ export default function EmployeesPage() {
     suspensionDate: '',
     terminationDate: ''
   })
-
-  useEffect(() => {
-    // Load data immediately - Layout handles auth
-    // تحميل البيانات فوراً - Layout يتعامل مع المصادقة
-    async function loadData() {
-      try {
-        const response = await fetch('/api/employees?includeTerminated=true')
-        if (response.ok) {
-          const result = await response.json()
-          setEmployees(result.data || [])
-        }
-      } catch (error) {
-        console.error('Error loading employees:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    loadData()
-  }, [])
 
   const handleOpenModal = () => {
     const today = new Date().toISOString().split('T')[0]
@@ -155,12 +137,7 @@ export default function EmployeesPage() {
 
       if (response.ok) {
         alert('تم حذف الموظف بنجاح')
-        // Reload employees
-        const empResponse = await fetch('/api/employees?includeTerminated=true')
-        if (empResponse.ok) {
-          const empResult = await empResponse.json()
-          setEmployees(empResult.data || [])
-        }
+        mutate()
       } else {
         const error = await response.json()
         alert(error.error || 'حدث خطأ في حذف الموظف')
@@ -288,13 +265,7 @@ export default function EmployeesPage() {
         const result = await response.json()
         alert(editingEmployee ? 'تم تحديث بيانات الموظف بنجاح' : 'تم إضافة الموظف بنجاح')
         handleCloseModal()
-        
-        // Reload employees
-        const empResponse = await fetch('/api/employees?includeTerminated=true')
-        if (empResponse.ok) {
-          const empResult = await empResponse.json()
-          setEmployees(empResult.data || [])
-        }
+        mutate()
       } else {
         const error = await response.json()
         alert(error.error || (editingEmployee ? 'حدث خطأ في تحديث الموظف' : 'حدث خطأ في إضافة الموظف'))
@@ -374,13 +345,7 @@ export default function EmployeesPage() {
         alert('تم تغيير حالة الموظف بنجاح')
         setShowChangeStatusModal(false)
         setChangingStatusEmployee(null)
-        
-        // Reload employees
-        const empResponse = await fetch('/api/employees?includeTerminated=true')
-        if (empResponse.ok) {
-          const empResult = await empResponse.json()
-          setEmployees(empResult.data || [])
-        }
+        mutate()
       } else {
         const error = await response.json()
         alert(error.error || 'حدث خطأ في تغيير حالة الموظف')
@@ -424,7 +389,7 @@ export default function EmployeesPage() {
   const suspendedCount = employees.filter(emp => emp.status === 'suspended').length
   const terminatedCount = employees.filter(emp => emp.status === 'terminated').length
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Layout>
         <div style={{ textAlign: 'center', padding: '40px' }}>
