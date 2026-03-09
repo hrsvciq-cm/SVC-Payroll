@@ -28,7 +28,7 @@ export async function GET(request) {
       'Dashboard stats'
     )
     const res = NextResponse.json(data)
-    res.headers.set('Cache-Control', 'private, s-maxage=15, stale-while-revalidate=30')
+    res.headers.set('Cache-Control', 'private, s-maxage=45, stale-while-revalidate=60')
     return res
   } catch (error) {
     logConnectionError(error, 'Dashboard Stats API')

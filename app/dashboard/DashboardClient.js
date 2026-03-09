@@ -37,7 +37,7 @@ export default function DashboardClient({ initialData, initialError, initialFilt
     fallbackData: initialData,
     revalidateOnMount: !initialData,
     revalidateOnFocus: false,
-    dedupingInterval: 10000
+    dedupingInterval: 20000
   })
 
   const stats = data || defaultStats
