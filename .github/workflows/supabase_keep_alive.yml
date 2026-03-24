@@ -2,9 +2,8 @@ name: Supabase Keep Alive
 
 on:
   schedule:
-    # سيتم تشغيل هذا الكود يومياً الساعة 12:00 ظهراً بتوقيت UTC
     - cron: '0 12 * * *'
-  workflow_dispatch: # يتيح لك تشغيل الأكشن يدوياً للتجربة
+  workflow_dispatch:
 
 jobs:
   ping_supabase:
