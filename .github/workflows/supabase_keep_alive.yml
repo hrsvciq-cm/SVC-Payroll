@@ -11,7 +11,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send Request to Website
-        run: |
-          # استبدل الرابط أدناه برابط موقعك الفعلي المنشور (على Vercel مثلاً)
-          # هذا الطلب سيجعل الكود يتصل بقاعدة البيانات ويمنع إيقافها
-          curl -I https://svc-payroll.vercel.app
+        run: https://svc-payroll.vercel.app
