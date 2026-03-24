@@ -11,4 +11,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send Request to Website
-        run: https://svc-payroll.vercel.app
+        run: curl -I https://svc-payroll.vercel.app
