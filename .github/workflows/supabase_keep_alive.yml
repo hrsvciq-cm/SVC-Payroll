@@ -1,1 +1,17 @@
+name: Supabase Keep Alive
 
+on:
+  schedule:
+    # سيتم تشغيل هذا الكود يومياً الساعة 12:00 ظهراً بتوقيت UTC
+    - cron: '0 12 * * *'
+  workflow_dispatch: # يتيح لك تشغيل الأكشن يدوياً للتجربة
+
+jobs:
+  ping_supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Request to Website
+        run: |
+          # استبدل الرابط أدناه برابط موقعك الفعلي المنشور (على Vercel مثلاً)
+          # هذا الطلب سيجعل الكود يتصل بقاعدة البيانات ويمنع إيقافها
+          curl -I https://svc-payroll.vercel.app
